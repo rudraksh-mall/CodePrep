@@ -102,10 +102,4 @@ problemSchema.index(
   { weights: { title: 3, description: 1 } },
 );
 
-// Single-field indexes
-problemSchema.index({ difficulty: 1 });
-problemSchema.index({ topics: 1 });
-problemSchema.index({ companies: 1 });
-problemSchema.index({ slug: 1 }, { unique: true });
-
 module.exports = mongoose.model("Problem", problemSchema);

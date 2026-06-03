@@ -85,9 +85,7 @@ async function getProblems({
  * @returns {Object} Problem document
  */
 async function getProblemBySlug(slug) {
-  const problem = await Problem.findOne({ slug })
-    .populate("solutions", "code language")
-    .exec();
+  const problem = await Problem.findOne({ slug }).exec();
 
   if (!problem) {
     throw new ApiError(404, `Problem not found: ${slug}`);

@@ -1,5 +1,6 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
+const slugify = require("slugify");
 const Problem = require("../models/Problem");
 const config = require("../config/env");
 
@@ -1299,9 +1300,10 @@ async function seedProblems() {
     const deleteResult = await Problem.deleteMany({});
     console.log(`Cleared ${deleteResult.deletedCount} existing problems`);
 
-    // Add default user ID to each problem (since createdBy is required)
+    // Add default user ID and slug to each problem (insertMany bypasses pre-save hooks)
     const problemsWithUser = problems.map((problem) => ({
       ...problem,
+      slug: slugify(problem.title, { lower: true, strict: true, trim: true }),
       createdBy: DUMMY_USER_ID,
     }));
 
