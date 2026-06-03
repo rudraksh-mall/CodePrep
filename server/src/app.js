@@ -6,6 +6,7 @@ const ApiError = require('./utils/ApiError');
 const ApiResponse = require('./utils/ApiResponse');
 const authRoutes = require('./routes/auth.routes');
 const problemRoutes = require('./routes/problem.routes');
+const progressRoutes = require('./routes/progress.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -29,6 +30,7 @@ app.get('/', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/problems', problemRoutes);
+app.use('/api/progress', progressRoutes);
 
 app.use((_req, _res, next) => {
   next(new ApiError(404, 'Route not found'));
