@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import useProblem from '../hooks/useProblem';
 import DifficultyBadge from '../components/problems/DifficultyBadge';
 import Button from '../components/ui/Button';
 import { PageLoader } from '../components/ui/Loader';
+import * as noteApi from '../api/note.api';
 
 function ExampleCard({ example, index }) {
   return (
@@ -33,6 +35,49 @@ export default function ProblemDetailPage() {
   const { slug } = useParams();
   const { data: problem, isLoading } = useProblem(slug);
   const [progress, setProgress] = useState(null);
+  const [notes, setNotes] = useState('');
+  const [saveStatus, setSaveStatus] = useState('idle');
+  const debounceRef = useRef(null);
+
+  const problemId = problem?._id;
+
+  const { data: noteData } = useQuery({
+    queryKey: ['note', problemId],
+    queryFn: () => noteApi.getNote(problemId),
+    enabled: Boolean(problemId),
+    staleTime: 300000,
+  });
+
+  useEffect(() => {
+    if (noteData) setNotes(noteData.content || '');
+  }, [noteData]);
+
+  const saveMutation = useMutation({
+    mutationFn: () => noteApi.upsertNote(problemId, notes),
+    onSuccess: () => setSaveStatus('saved'),
+    onError: () => setSaveStatus('error'),
+  });
+
+  const handleBlur = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSaveStatus('saving');
+    debounceRef.current = setTimeout(() => {
+      saveMutation.mutate();
+    }, 1000);
+  }, [problemId, notes, saveMutation]);
+
+  const handleFocus = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   if (isLoading) return <PageLoader />;
   if (!problem) return null;
@@ -128,9 +173,28 @@ export default function ProblemDetailPage() {
           </div>
 
           <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-2">Notes</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100">Notes</h3>
+              <span className={`text-xs transition-opacity ${
+                saveStatus === 'saved'
+                  ? 'text-green-500'
+                  : saveStatus === 'saving'
+                    ? 'text-yellow-500'
+                    : saveStatus === 'error'
+                      ? 'text-red-500'
+                      : 'opacity-0'
+              }`}>
+                {saveStatus === 'saved' && 'Saved'}
+                {saveStatus === 'saving' && 'Saving...'}
+                {saveStatus === 'error' && 'Save failed'}
+              </span>
+            </div>
             <textarea
               rows={4}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              onBlur={handleBlur}
+              onFocus={handleFocus}
               placeholder="Write your notes here..."
               className="block w-full rounded-lg border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
             />
