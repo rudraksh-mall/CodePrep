@@ -34,9 +34,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-surface-50 dark:bg-surface-950 px-4">
       <div className="w-full max-w-sm space-y-6">
-        <h1 className="text-2xl font-bold text-center text-gray-900">Create account</h1>
+        <h1 className="text-2xl font-bold text-center text-surface-900 dark:text-surface-100">Create account</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -67,16 +67,16 @@ export default function RegisterPage() {
             required
           />
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-500">{error}</p>}
 
           <Button type="submit" loading={loading}>
             Create account
           </Button>
         </form>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-surface-500 dark:text-surface-400">
           Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
+          <Link to="/login" className="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-500">
             Sign in
           </Link>
         </p>

@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
+import ProblemsPage from '../pages/ProblemsPage';
+import ProblemDetailPage from '../pages/ProblemDetailPage';
 
 function ProtectedRoute({ children }) {
   const { token } = useAuth();
@@ -28,11 +30,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/problems',
-    element: <ProtectedRoute><div className="p-8 text-center">Problems</div></ProtectedRoute>,
+    element: <ProtectedRoute><ProblemsPage /></ProtectedRoute>,
   },
   {
     path: '/problems/:slug',
-    element: <ProtectedRoute><div className="p-8 text-center">Problem Detail</div></ProtectedRoute>,
+    element: <ProtectedRoute><ProblemDetailPage /></ProtectedRoute>,
   },
   {
     path: '/assistant',
