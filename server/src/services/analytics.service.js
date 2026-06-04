@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Progress = require("../models/Progress");
+const Problem = require("../models/Problem");
 const User = require("../models/User");
 
 async function getSummary(userId) {
@@ -21,31 +22,48 @@ async function getSummary(userId) {
 async function getByTopic(userId) {
   const objectId = new mongoose.Types.ObjectId(userId);
 
-  const results = await Progress.aggregate([
-    { $match: { userId: objectId } },
-    {
-      $lookup: {
-        from: "problems",
-        localField: "problemId",
-        foreignField: "_id",
-        as: "problem",
-      },
-    },
-    { $unwind: "$problem" },
-    { $unwind: "$problem.topics" },
-    {
-      $group: {
-        _id: "$problem.topics",
-        solved: { $sum: { $cond: [{ $eq: ["$status", "solved"] }, 1, 0] } },
-        attempted: {
-          $sum: { $cond: [{ $eq: ["$status", "attempted"] }, 1, 0] },
+  const [topicTotals, userProgress] = await Promise.all([
+    Problem.aggregate([
+      { $unwind: "$topics" },
+      { $group: { _id: "$topics", total: { $sum: 1 } } },
+    ]),
+    Progress.aggregate([
+      { $match: { userId: objectId } },
+      {
+        $lookup: {
+          from: "problems",
+          localField: "problemId",
+          foreignField: "_id",
+          as: "problem",
         },
-        total: { $sum: 1 },
       },
-    },
-    { $sort: { total: -1 } },
-    { $project: { _id: 0, topic: "$_id", solved: 1, attempted: 1, total: 1 } },
+      { $unwind: "$problem" },
+      { $unwind: "$problem.topics" },
+      {
+        $group: {
+          _id: "$problem.topics",
+          solved: { $sum: { $cond: [{ $eq: ["$status", "solved"] }, 1, 0] } },
+          attempted: {
+            $sum: { $cond: [{ $eq: ["$status", "attempted"] }, 1, 0] },
+          },
+        },
+      },
+    ]),
   ]);
+
+  const progressMap = {};
+  for (const p of userProgress) {
+    progressMap[p._id] = { solved: p.solved, attempted: p.attempted };
+  }
+
+  const results = topicTotals
+    .map((t) => ({
+      topic: t._id,
+      solved: progressMap[t._id]?.solved || 0,
+      attempted: progressMap[t._id]?.attempted || 0,
+      total: t.total,
+    }))
+    .sort((a, b) => b.total - a.total);
 
   return results;
 }

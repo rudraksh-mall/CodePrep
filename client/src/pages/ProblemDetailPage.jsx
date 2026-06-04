@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import useProblem from '../hooks/useProblem';
@@ -9,6 +9,7 @@ import Button from '../components/ui/Button';
 import { PageLoader } from '../components/ui/Loader';
 import HintPanel from '../components/ai/HintPanel';
 import * as noteApi from '../api/note.api';
+import * as progressApi from '../api/progress.api';
 
 function ExampleCard({ example, index }) {
   return (
@@ -35,12 +36,33 @@ function ExampleCard({ example, index }) {
 export default function ProblemDetailPage() {
   const { slug } = useParams();
   const { data: problem, isLoading } = useProblem(slug);
+  const queryClient = useQueryClient();
+
   const [progress, setProgress] = useState(null);
   const [notes, setNotes] = useState('');
   const [saveStatus, setSaveStatus] = useState('idle');
   const debounceRef = useRef(null);
 
   const problemId = problem?._id;
+
+  const { data: savedProgress } = useQuery({
+    queryKey: ['progress', problemId],
+    queryFn: () => progressApi.getProgressForProblem(problemId),
+    enabled: Boolean(problemId),
+    staleTime: 300000,
+  });
+
+  useEffect(() => {
+    if (savedProgress) setProgress(savedProgress.status);
+  }, [savedProgress]);
+
+  const progressMutation = useMutation({
+    mutationFn: (status) => progressApi.upsertProgress(problemId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['progress', problemId] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+    },
+  });
 
   const { data: noteData } = useQuery({
     queryKey: ['note', problemId],
@@ -154,14 +176,22 @@ export default function ProblemDetailPage() {
               <Button
                 variant={progress === 'solved' ? 'primary' : 'secondary'}
                 size="sm"
-                onClick={() => setProgress(progress === 'solved' ? null : 'solved')}
+                onClick={() => {
+                  const next = progress === 'solved' ? 'unsolved' : 'solved';
+                  setProgress(next);
+                  progressMutation.mutate(next);
+                }}
               >
                 Solved
               </Button>
               <Button
                 variant={progress === 'attempted' ? 'primary' : 'secondary'}
                 size="sm"
-                onClick={() => setProgress(progress === 'attempted' ? null : 'attempted')}
+                onClick={() => {
+                  const next = progress === 'attempted' ? 'unsolved' : 'attempted';
+                  setProgress(next);
+                  progressMutation.mutate(next);
+                }}
               >
                 Attempted
               </Button>

@@ -27,6 +27,16 @@ export async function sendChatMessage({ message, chatHistory }) {
   return res.data.data;
 }
 
+export async function generateRoadmap(data) {
+  const res = await api.post('/ai/roadmap', data);
+  return res.data.data;
+}
+
+export async function getRoadmap() {
+  const res = await api.get('/ai/roadmap');
+  return res.data.data;
+}
+
 export async function generateQuestions(resumeId, { targetRole, questionCount }) {
   const res = await api.post(`/ai/resume/${resumeId}/questions`, {
     targetRole,
