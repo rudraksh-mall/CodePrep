@@ -1,5 +1,8 @@
 const hintService = require("../services/ai/hint.service");
 const resumeService = require("../services/ai/resume.service");
+const interviewQuestionService = require("../services/ai/interviewQuestion.service");
+const Resume = require("../models/Resume");
+const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 
 async function generateHint(req, res) {
@@ -31,4 +34,34 @@ async function uploadResume(req, res) {
   );
 }
 
-module.exports = { generateHint, uploadResume };
+async function generateInterviewQuestions(req, res) {
+  const { resumeId } = req.params;
+  const { targetRole, questionCount } = req.body;
+
+  const resume = await Resume.findById(resumeId);
+
+  if (!resume || resume.userId.toString() !== req.user._id.toString()) {
+    throw new ApiError(404, "Resume not found");
+  }
+
+  const extractedSkills = resume.extractedData?.extractedSkills || [];
+
+  const questions = await interviewQuestionService.generateQuestions({
+    extractedSkills,
+    targetRole,
+    questionCount,
+  });
+
+  const saved = await interviewQuestionService.saveQuestions({
+    userId: req.user._id,
+    resumeId,
+    targetRole,
+    questions,
+  });
+
+  res.status(200).json(
+    new ApiResponse(200, { resumeId, questions: saved.questions }, "Questions generated"),
+  );
+}
+
+module.exports = { generateHint, uploadResume, generateInterviewQuestions };

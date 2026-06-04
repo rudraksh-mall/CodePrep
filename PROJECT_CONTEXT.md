@@ -70,6 +70,7 @@ LangChain · Gemini · ChromaDB
 | **PROMPT 21** | `server/src/middleware/upload.middleware.js` + `server/src/utils/pdfParser.js` | Multer PDF upload (5MB limit, memoryStorage, PDF-only filter) and pdf-parse extraction |
 | **PROMPT 22** | `server/src/models/Resume.js` + `server/src/services/ai/resume.service.js` | Resume Mongoose schema (skills, experience, education) and LLM analysis chain with JsonOutputParser |
 | **PROMPT 23** | `server/src/controllers/ai.controller.js` + `server/src/routes/ai.routes.js` | Resume upload endpoint — `POST /api/ai/resume/upload` with PDF upload, Multer error handling, LLM analysis, MongoDB persistence |
+| **PROMPT 24** | `server/src/models/InterviewQuestion.js` + `server/src/services/ai/interviewQuestion.service.js` + controller/routes | Interview question generation — `POST /api/ai/resume/:resumeId/questions`, LLM chain with JsonOutputParser, 60/20/20 category split, Zod validation |
 
 ---
 

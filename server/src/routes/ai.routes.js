@@ -24,6 +24,13 @@ const hintSchema = z.object({
 
 router.post("/hint", validate(hintSchema), aiController.generateHint);
 
+const questionsSchema = z.object({
+  targetRole: z.string().min(1, "targetRole is required"),
+  questionCount: z.number().int().min(5).max(30).optional(),
+});
+
+router.post("/resume/:resumeId/questions", validate(questionsSchema), aiController.generateInterviewQuestions);
+
 router.post("/resume/upload", (req, res, next) => {
   uploadPDF(req, res, (err) => {
     if (err) {
