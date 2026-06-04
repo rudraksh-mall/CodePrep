@@ -1,6 +1,7 @@
 const hintService = require("../services/ai/hint.service");
 const resumeService = require("../services/ai/resume.service");
 const interviewQuestionService = require("../services/ai/interviewQuestion.service");
+const assistantService = require("../services/ai/assistant.service");
 const Resume = require("../models/Resume");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -64,4 +65,15 @@ async function generateInterviewQuestions(req, res) {
   );
 }
 
-module.exports = { generateHint, uploadResume, generateInterviewQuestions };
+async function chat(req, res) {
+  const { message, chatHistory } = req.body;
+
+  const response = await assistantService.getAssistantResponse({
+    message,
+    chatHistory: chatHistory || [],
+  });
+
+  res.status(200).json(new ApiResponse(200, { response }, "Response generated"));
+}
+
+module.exports = { generateHint, uploadResume, generateInterviewQuestions, chat };

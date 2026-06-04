@@ -1,5 +1,6 @@
 const { Router } = require("express");
 const { z } = require("zod");
+const rateLimit = require("express-rate-limit");
 const multer = require("multer");
 const validate = require("../middleware/validate.middleware");
 const authenticate = require("../middleware/auth.middleware");
@@ -10,6 +11,16 @@ const ApiError = require("../utils/ApiError");
 const router = Router();
 
 router.use(authenticate);
+
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  keyGenerator: (req) => req.user._id.toString(),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.use(aiLimiter);
 
 const hintSchema = z.object({
   problemTitle: z.string().min(1, "problemTitle is required"),
@@ -30,6 +41,21 @@ const questionsSchema = z.object({
 });
 
 router.post("/resume/:resumeId/questions", validate(questionsSchema), aiController.generateInterviewQuestions);
+
+const chatSchema = z.object({
+  message: z.string().min(1, "Message is required").max(2000, "Message must be under 2000 characters"),
+  chatHistory: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string(),
+      }),
+    )
+    .max(20, "Chat history cannot exceed 20 messages")
+    .optional(),
+});
+
+router.post("/chat", validate(chatSchema), aiController.chat);
 
 router.post("/resume/upload", (req, res, next) => {
   uploadPDF(req, res, (err) => {
