@@ -57,6 +57,18 @@ const chatSchema = z.object({
 
 router.post("/chat", validate(chatSchema), aiController.chat);
 
+const roadmapSchema = z.object({
+  weakTopics: z.array(z.string()).optional(),
+  targetRole: z.string().min(1, "targetRole is required"),
+  duration: z.number().int().refine((val) => [30, 60, 90].includes(val), {
+    message: "duration must be 30, 60, or 90",
+  }),
+  currentLevel: z.enum(["beginner", "intermediate", "advanced"]),
+});
+
+router.post("/roadmap", validate(roadmapSchema), aiController.generateRoadmap);
+router.get("/roadmap", aiController.getRoadmap);
+
 router.post("/resume/upload", (req, res, next) => {
   uploadPDF(req, res, (err) => {
     if (err) {

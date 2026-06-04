@@ -2,6 +2,7 @@ const hintService = require("../services/ai/hint.service");
 const resumeService = require("../services/ai/resume.service");
 const interviewQuestionService = require("../services/ai/interviewQuestion.service");
 const assistantService = require("../services/ai/assistant.service");
+const roadmapService = require("../services/ai/roadmap.service");
 const Resume = require("../models/Resume");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -76,4 +77,24 @@ async function chat(req, res) {
   res.status(200).json(new ApiResponse(200, { response }, "Response generated"));
 }
 
-module.exports = { generateHint, uploadResume, generateInterviewQuestions, chat };
+async function generateRoadmap(req, res) {
+  const { weakTopics, targetRole, duration, currentLevel } = req.body;
+
+  const roadmap = await roadmapService.generateRoadmap({
+    weakTopics: weakTopics || [],
+    targetRole,
+    duration,
+    currentLevel,
+    userId: req.user._id,
+  });
+
+  res.status(201).json(new ApiResponse(201, roadmap, "Roadmap generated"));
+}
+
+async function getRoadmap(req, res) {
+  const roadmap = await roadmapService.getRoadmap(req.user._id);
+
+  res.status(200).json(new ApiResponse(200, roadmap || null, roadmap ? "Roadmap retrieved" : "No roadmap found"));
+}
+
+module.exports = { generateHint, uploadResume, generateInterviewQuestions, chat, generateRoadmap, getRoadmap };
