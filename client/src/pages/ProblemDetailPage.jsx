@@ -7,6 +7,7 @@ import useProblem from '../hooks/useProblem';
 import DifficultyBadge from '../components/problems/DifficultyBadge';
 import Button from '../components/ui/Button';
 import { PageLoader } from '../components/ui/Loader';
+import HintPanel from '../components/ai/HintPanel';
 import * as noteApi from '../api/note.api';
 
 function ExampleCard({ example, index }) {
@@ -167,10 +168,7 @@ export default function ProblemDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-2">Hints</h3>
-            <p className="text-sm text-surface-500 dark:text-surface-400">Hints will be available here.</p>
-          </div>
+          <HintPanel problemTitle={problem.title} problemDescription={problem.description} />
 
           <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-4 shadow-sm">
             <div className="flex items-center justify-between mb-2">

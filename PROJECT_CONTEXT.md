@@ -1,66 +1,75 @@
 # CodePrep AI
 
-Tech Stack
+## Tech Stack
 
-Frontend:
+### Frontend
+React · Vite · Tailwind CSS · React Query · Recharts
 
-- React
-- Vite
-- Tailwind CSS
-- React Query
+### Backend
+Node.js · Express · MongoDB · Mongoose · LangChain · ChromaDB · Gemini
 
-Backend:
+### AI / ML
+LangChain · Gemini · ChromaDB
 
-Completed:
+---
 
-- Backend Setup
-- MongoDB Connection
-- User Model
-- JWT Authentication
-- Register API
-- Login API
-- Protected Route
-- Problem Model (PROMPT 09)
-- Problems Seed Script (PROMPT 10)
-- Problems API (PROMPT 11)
+## Architecture
 
-Design System:
+| Pattern | Details |
+|---|---|
+| **Backend** | Controller-Service Pattern |
+| **Auth** | JWT with Bearer tokens |
+| **API** | RESTful, rate-limited (100 req/15min) |
+| **Validation** | Zod schemas via middleware |
+| **Frontend state** | React Query for server state, Context for auth/theme |
 
-- Dark theme (class-based with `darkMode: 'class'`)
-- Extended Tailwind config with semantic colors (surface, primary), custom font families (Inter, JetBrains Mono), animation tokens (fade-in, slide-up)
-- Global CSS with CSS custom properties for bg/surface/border/text colors
-- ThemeContext for dark/light toggle with localStorage persistence
-- Reusable components: Button (variants: primary/secondary/ghost/danger, sizes: sm/md/lg, loading), Input (dark-themed, error state), Card (+ CardHeader/CardBody/CardFooter), Modal (Escape/overlay close, animated), Loader (Spinner/PageLoader/Skeleton)
+---
 
-AI:
+## Design System
 
-- LangChain
-- Gemini
-- ChromaDB
+| Area | Details |
+|---|---|
+| **Theme** | Dark/light via `darkMode: 'class'`, persisted to localStorage, respects `prefers-color-scheme` |
+| **Colors** | `surface` (slate scale) and `primary` (indigo scale) — both 50–950 |
+| **Typography** | `font-sans`: Inter, system-ui · `font-mono`: JetBrains Mono, Fira Code |
+| **Animations** | `fade-in` (0.2s), `slide-up` (0.3s, 12px translate) |
+| **CSS vars** | `--color-bg`, `--color-surface`, `--color-border`, `--color-text`, `--color-text-muted` toggle on `.dark` |
 
-Architecture:
+### Reusable Components (`src/components/ui/`)
 
-- Controller-Service Pattern
-- JWT Authentication
-- REST APIs
+| Component | Props / Variants |
+|---|---|
+| **Button** | `variant`: primary, secondary, ghost, danger · `size`: sm, md, lg · `loading` spinner |
+| **Input** | `label`, `error`, dark-themed bg/text/placeholder |
+| **Card** | + `CardHeader`, `CardBody`, `CardFooter` named exports |
+| **Modal** | Escape/overlay close, scroll lock, fade-in backdrop, slide-up content |
+| **Loader** | `Spinner` (3 sizes), `PageLoader`, `Skeleton` (animated pulse) |
 
-Rules:
+---
+
+## Rules
 
 - Never generate entire project
-- Generate one task at a time
+- One task at a time
 - Follow Controller-Service Pattern
+- Do not modify unrelated files
 
-Completed:
+---
 
-- PROMPT 09 - Problem Model (Mongoose schema with slug auto-generation and text indexes)
-- PROMPT 10 - Problems Seed Script (50 DSA problems across 7 topics)
-- PROMPT 11 - Problems API (Backend listing, filtering, pagination endpoints)
-- PROMPT 12 - Problems Page (Frontend listing, filters, search, pagination, difficulty badge)
-- PROMPT 13 - Problem Detail Page (Full problem view with markdown description, examples, constraints, right sidebar with progress/hints/notes)
-- PROMPT 19 - Hint Generation Service & API (AI-powered LCEL chain with ChatPromptTemplate, 3-level hints via POST /api/ai/hint, Zod validation)
-- Global Design System (Tailwind dark theme, reusable Button/Card/Input/Modal/Loader, ThemeContext)
+## Completed Prompts
 
+| Prompt | File(s) | Description |
+|---|---|---|
+| **PROMPT 09** | `server/src/models/Problem.js` | Mongoose schema with slug auto-generation and text indexes |
+| **PROMPT 10** | `server/src/scripts/seedProblems.js` | Seed script — 50 DSA problems across 7 topics |
+| **PROMPT 11** | `server/` (controller, service, routes) | Problems API — listing, filtering, pagination |
+| **PROMPT 12** | `client/src/pages/ProblemsPage.jsx` + filters, badges, hooks | Problem listing with search, difficulty/topic filters, pagination |
+| **PROMPT 13** | `client/src/pages/ProblemDetailPage.jsx` | Full problem view — markdown description, examples, constraints, sidebar |
+| **PROMPT 19** | `server/src/services/ai/hint.service.js` + controller, routes | AI hint generation — LCEL chain, 3 levels, Zod validation |
+| **PROMPT 20** | `client/src/components/ai/HintPanel.jsx` + AI API | Frontend hint panel — 3 progressive buttons, loading/disabled states, callout |
 
-Current Task:
+---
 
-- TBD
+## Current Task
+
+**TBD**
