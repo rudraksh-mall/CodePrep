@@ -22,6 +22,11 @@ export async function uploadResume(file, onProgress) {
   return res.data.data;
 }
 
+export async function sendChatMessage({ message, chatHistory }) {
+  const res = await api.post('/ai/chat', { message, chatHistory });
+  return res.data.data;
+}
+
 export async function generateQuestions(resumeId, { targetRole, questionCount }) {
   const res = await api.post(`/ai/resume/${resumeId}/questions`, {
     targetRole,

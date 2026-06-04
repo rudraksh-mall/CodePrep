@@ -6,6 +6,7 @@ import ProblemsPage from "../pages/ProblemsPage";
 import ProblemDetailPage from "../pages/ProblemDetailPage";
 import DashboardPage from "../pages/DashboardPage";
 import ResumeAnalyzerPage from "../pages/ResumeAnalyzerPage";
+import AssistantPage from "../pages/AssistantPage";
 import AppLayout from "../components/layout/AppLayout";
 
 function ProtectedRoute({ children }) {
@@ -49,7 +50,7 @@ const router = createBrowserRouter([
       { path: "/dashboard", element: <DashboardPage /> },
       { path: "/problems", element: <ProblemsPage /> },
       { path: "/problems/:slug", element: <ProblemDetailPage /> },
-      { path: "/assistant", element: <div className="p-8 text-center">AI Assistant</div> },
+      { path: "/assistant", element: <AssistantPage /> },
       { path: "/resume", element: <ResumeAnalyzerPage /> },
       { path: "/roadmap", element: <div className="p-8 text-center">Learning Roadmap</div> },
       { path: "/analytics", element: <div className="p-8 text-center">Analytics</div> },
