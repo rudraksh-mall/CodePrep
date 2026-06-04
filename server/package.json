@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon index.js",
     "start": "node index.js",
-    "seed": "node src/scripts/seedProblems.js"
+    "seed": "node src/scripts/seedProblems.js",
+    "ingest": "node src/scripts/ingestDSADocs.js"
   },
   "keywords": [],
   "author": "",
