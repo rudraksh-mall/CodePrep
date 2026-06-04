@@ -72,6 +72,7 @@ LangChain · Gemini · ChromaDB
 | **PROMPT 23** | `server/src/controllers/ai.controller.js` + `server/src/routes/ai.routes.js` | Resume upload endpoint — `POST /api/ai/resume/upload` with PDF upload, Multer error handling, LLM analysis, MongoDB persistence |
 | **PROMPT 24** | `server/src/models/InterviewQuestion.js` + `server/src/services/ai/interviewQuestion.service.js` + controller/routes | Interview question generation — `POST /api/ai/resume/:resumeId/questions`, LLM chain with JsonOutputParser, 60/20/20 category split, Zod validation |
 | **PROMPT 32** | `client/src/pages/AnalyticsPage.jsx` + `client/src/components/analytics/` (3 chart components) + router update | Analytics dashboard — recharts PieChart (difficulty), BarChart (top 10 topics), LineChart (solved over 30 days), summary stat cards |
+| **PROMPT 33** | `client/src/components/progress/HeatmapCalendar.jsx` + `client/src/pages/DashboardPage.jsx` | GitHub-style activity heatmap — 52×7 grid, emerald intensity levels (0/1/2-3/4+), hover tooltip, month labels, 365-day data from analytics API |
 
 ---
 

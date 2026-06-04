@@ -2,7 +2,8 @@ import Card from "../components/ui/Card";
 import { PageLoader } from "../components/ui/Loader";
 import StreakCard from "../components/progress/StreakCard";
 import TopicProgressBar from "../components/progress/TopicProgressBar";
-import { useSummary, useByTopic } from "../hooks/useAnalytics";
+import HeatmapCalendar from "../components/progress/HeatmapCalendar";
+import { useSummary, useByTopic, useOverTime } from "../hooks/useAnalytics";
 
 function StatCard({ label, value, icon }) {
   return (
@@ -24,8 +25,8 @@ function StatCard({ label, value, icon }) {
 
 export default function DashboardPage() {
   const { data: summary, isLoading: summaryLoading } = useSummary();
-  console.log("SUMMARY DATA:", summary);
   const { data: topics = [], isLoading: topicsLoading } = useByTopic();
+  const { data: heatmapData = [] } = useOverTime(365);
 
   if (summaryLoading) return <PageLoader />;
 console.log("VALUE", summary?.totalSolved);
@@ -77,6 +78,13 @@ console.log("VALUE", summary?.totalSolved);
             ))}
           </div>
         )}
+      </Card>
+
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
+          Activity
+        </h2>
+        <HeatmapCalendar data={heatmapData} days={365} />
       </Card>
     </div>
   );
