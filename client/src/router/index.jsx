@@ -8,6 +8,7 @@ import DashboardPage from "../pages/DashboardPage";
 import ResumeAnalyzerPage from "../pages/ResumeAnalyzerPage";
 import AssistantPage from "../pages/AssistantPage";
 import RoadmapPage from "../pages/RoadmapPage";
+import AnalyticsPage from "../pages/AnalyticsPage";
 import AppLayout from "../components/layout/AppLayout";
 
 function ProtectedRoute({ children }) {
@@ -54,7 +55,7 @@ const router = createBrowserRouter([
       { path: "/assistant", element: <AssistantPage /> },
       { path: "/resume", element: <ResumeAnalyzerPage /> },
       { path: "/roadmap", element: <RoadmapPage /> },
-      { path: "/analytics", element: <div className="p-8 text-center">Analytics</div> },
+      { path: "/analytics", element: <AnalyticsPage /> },
     ],
   },
 ]);
