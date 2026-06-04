@@ -67,6 +67,9 @@ LangChain · Gemini · ChromaDB
 | **PROMPT 13** | `client/src/pages/ProblemDetailPage.jsx` | Full problem view — markdown description, examples, constraints, sidebar |
 | **PROMPT 19** | `server/src/services/ai/hint.service.js` + controller, routes | AI hint generation — LCEL chain, 3 levels, Zod validation |
 | **PROMPT 20** | `client/src/components/ai/HintPanel.jsx` + AI API | Frontend hint panel — 3 progressive buttons, loading/disabled states, callout |
+| **PROMPT 21** | `server/src/middleware/upload.middleware.js` + `server/src/utils/pdfParser.js` | Multer PDF upload (5MB limit, memoryStorage, PDF-only filter) and pdf-parse extraction |
+| **PROMPT 22** | `server/src/models/Resume.js` + `server/src/services/ai/resume.service.js` | Resume Mongoose schema (skills, experience, education) and LLM analysis chain with JsonOutputParser |
+| **PROMPT 23** | `server/src/controllers/ai.controller.js` + `server/src/routes/ai.routes.js` | Resume upload endpoint — `POST /api/ai/resume/upload` with PDF upload, Multer error handling, LLM analysis, MongoDB persistence |
 
 ---
 
