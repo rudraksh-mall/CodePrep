@@ -57,6 +57,7 @@ Completed:
 - PROMPT 11 - Problems API (Backend listing, filtering, pagination endpoints)
 - PROMPT 12 - Problems Page (Frontend listing, filters, search, pagination, difficulty badge)
 - PROMPT 13 - Problem Detail Page (Full problem view with markdown description, examples, constraints, right sidebar with progress/hints/notes)
+- PROMPT 19 - Hint Generation Service & API (AI-powered LCEL chain with ChatPromptTemplate, 3-level hints via POST /api/ai/hint, Zod validation)
 - Global Design System (Tailwind dark theme, reusable Button/Card/Input/Modal/Loader, ThemeContext)
 
 
