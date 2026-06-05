@@ -1,9 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const ApiError = require('./utils/ApiError');
 const ApiResponse = require('./utils/ApiResponse');
+const { nodeEnv, frontendUrl } = require('./config/env');
 const authRoutes = require('./routes/auth.routes');
 const problemRoutes = require('./routes/problem.routes');
 const progressRoutes = require('./routes/progress.routes');
@@ -14,8 +16,30 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
-app.use(helmet());
-app.use(cors());
+const corsOrigins = {};
+
+if (nodeEnv === 'production') {
+  corsOrigins[frontendUrl] = true;
+} else {
+  corsOrigins['http://localhost:5173'] = true;
+  corsOrigins['http://localhost:5000'] = true;
+}
+
+app.use(cors({
+  origin: corsOrigins,
+  credentials: true,
+}));
+
+app.use(helmet({ contentSecurityPolicy: false }));
+
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  next();
+});
+
+app.use(morgan(nodeEnv === 'production' ? 'combined' : 'dev'));
+
 app.use(express.json({ limit: '16kb' }));
 
 const limiter = rateLimit({
