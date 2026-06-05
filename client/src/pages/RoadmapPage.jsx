@@ -106,7 +106,7 @@ export default function RoadmapPage() {
 
   if (!roadmap) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8 space-y-8">
+      <div className="space-y-8">
         <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">
           Learning Roadmap
         </h1>
@@ -199,7 +199,7 @@ export default function RoadmapPage() {
   const doneCount = roadmap.weeks?.filter((w) => completedWeeks[w.weekNumber]).length || 0;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8 space-y-8">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">

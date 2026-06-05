@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
+import PageWrapper from './PageWrapper';
 
 export default function AppLayout() {
   return (
@@ -9,7 +10,9 @@ export default function AppLayout() {
       <div className="flex">
         <Sidebar />
         <main className="flex-1 min-w-0">
-          <Outlet />
+          <PageWrapper>
+            <Outlet />
+          </PageWrapper>
         </main>
       </div>
     </div>

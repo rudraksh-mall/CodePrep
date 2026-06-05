@@ -95,74 +95,76 @@ export default function HeatmapCalendar({ data = [], days = 365 }) {
         </div>
 
         {/* Heatmap */}
-        <div className="flex-1 min-w-0">
-          {/* Month Labels */}
-          <div
-            className="grid mb-2 text-xs text-surface-400"
-            style={{
-              gridTemplateColumns: `repeat(${cols}, 1fr)`,
-            }}
-          >
-            {Array.from({ length: cols }).map((_, col) => {
-              const month = monthLabels.find((m) => m.col === col);
+        <div className="flex-1 overflow-x-auto pb-2">
+          <div className="min-w-[650px]">
+            {/* Month Labels */}
+            <div
+              className="grid mb-2 text-xs text-surface-400"
+              style={{
+                gridTemplateColumns: `repeat(${cols}, 1fr)`,
+              }}
+            >
+              {monthLabels.map((m, i) => {
+                const span = (monthLabels[i + 1]?.col ?? cols) - m.col;
+                return (
+                  <div
+                    key={m.col}
+                    className="overflow-hidden text-ellipsis whitespace-nowrap"
+                    style={{ gridColumn: `${m.col + 1} / ${m.col + 1 + span}` }}
+                  >
+                    {m.label}
+                  </div>
+                );
+              })}
+            </div>
 
-              return (
-                <div
-                  key={col}
-                  className="text-left whitespace-nowrap"
-                >
-                  {month?.label || ''}
-                </div>
-              );
-            })}
-          </div>
+            {/* Heatmap Grid */}
+            <div
+              className="grid w-full"
+              style={{
+                gridTemplateColumns: `repeat(${cols}, minmax(12px, 1fr))`,
+                gridTemplateRows: 'repeat(7, 1fr)',
+                gap: '2px',
+              }}
+            >
+              {cells.map((cell, i) => {
+                if (!cell) {
+                  return (
+                    <div
+                      key={i}
+                      className="aspect-square"
+                      style={{
+                        gridColumn: (i % cols) + 1,
+                      }}
+                    />
+                  );
+                }
 
-          {/* Heatmap Grid */}
-          <div
-            className="grid w-full"
-            style={{
-              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-              gridTemplateRows: 'repeat(7, 1fr)',
-              gap: '2px',
-            }}
-          >
-            {cells.map((cell, i) => {
-              if (!cell) {
                 return (
                   <div
                     key={i}
-                    className="aspect-square"
+                    className={`aspect-square rounded-[2px] cursor-pointer transition-all hover:ring-1 hover:ring-white/30 ${getIntensity(
+                      cell.count
+                    )}`}
                     style={{
-                      gridColumn: (i % cols) + 1,
+                      gridColumn: cell.col + 1,
+                      gridRow: cell.row + 1,
                     }}
+                    onMouseEnter={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+
+                      setTooltip({
+                        x: rect.left + rect.width / 2,
+                        y: rect.top - 10,
+                        date: cell.date,
+                        count: cell.count,
+                      });
+                    }}
+                    onMouseLeave={() => setTooltip(null)}
                   />
                 );
-              }
-
-              return (
-                <div
-                  key={i}
-                  className={`aspect-square rounded-[2px] cursor-pointer transition-all hover:ring-1 hover:ring-white/30 ${getIntensity(
-                    cell.count
-                  )}`}
-                  style={{
-                    gridColumn: cell.col + 1,
-                    gridRow: cell.row + 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-
-                    setTooltip({
-                      x: rect.left + rect.width / 2,
-                      y: rect.top - 10,
-                      date: cell.date,
-                      count: cell.count,
-                    });
-                  }}
-                  onMouseLeave={() => setTooltip(null)}
-                />
-              );
-            })}
+              })}
+            </div>
           </div>
         </div>
       </div>

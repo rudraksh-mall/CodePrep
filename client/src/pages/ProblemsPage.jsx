@@ -28,7 +28,7 @@ export default function ProblemsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div>
       <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100 mb-6">Problems</h1>
 
       <ProblemFilters filters={filters} onFilterChange={setFilters} />

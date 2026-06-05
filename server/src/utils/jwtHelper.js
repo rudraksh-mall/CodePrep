@@ -2,8 +2,8 @@ const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../config/env');
 const ApiError = require('./ApiError');
 
-function generateToken(userId) {
-  return jwt.sign({ userId }, jwtSecret, { expiresIn: '7d' });
+function generateToken(userId, name, email) {
+  return jwt.sign({ userId, name, email }, jwtSecret, { expiresIn: '7d' });
 }
 
 function verifyToken(token) {

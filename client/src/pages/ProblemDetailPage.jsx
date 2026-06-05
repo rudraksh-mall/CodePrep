@@ -109,7 +109,7 @@ export default function ProblemDetailPage() {
   const constraints = problem.constraints || '';
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div>
       <Link
         to="/problems"
         className="inline-flex items-center gap-1 text-sm text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 mb-4 transition"

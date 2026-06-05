@@ -28,7 +28,7 @@ export default function AnalyticsPage() {
   if (summaryLoading) return <PageLoader />;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 space-y-8">
+    <div className="space-y-8">
       <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">Analytics</h1>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

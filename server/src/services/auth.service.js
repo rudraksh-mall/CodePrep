@@ -10,7 +10,7 @@ async function register({ name, email, password }) {
   }
 
   const user = await User.create({ name, email, passwordHash: password });
-  const token = generateToken(user._id);
+  const token = generateToken(user._id, user.name, user.email);
 
   return { user: { id: user._id, name: user.name, email: user.email }, token };
 }
@@ -28,7 +28,7 @@ async function login({ email, password }) {
     throw new ApiError(401, 'Invalid email or password');
   }
 
-  const token = generateToken(user._id);
+  const token = generateToken(user._id, user.name, user.email);
 
   return { user: { id: user._id, name: user.name, email: user.email }, token };
 }
