@@ -5,6 +5,7 @@ import ErrorBoundary from "../components/ui/ErrorBoundary";
 import Spinner from "../components/ui/Spinner";
 import AppLayout from "../components/layout/AppLayout";
 
+const LandingPage = lazy(() => import("../pages/LandingPage"));
 const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
 const RegisterPage = lazy(() => import("../pages/auth/RegisterPage"));
 const DashboardPage = lazy(() => import("../pages/DashboardPage"));
@@ -54,7 +55,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/",
-    element: <div className="p-8 text-center">CodePrep AI</div>,
+    element: <SuspenseWrapper><LandingPage /></SuspenseWrapper>,
   },
   {
     element: (
