@@ -1,16 +1,32 @@
-# React + Vite
+# CodePrep AI — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Vercel Deployment
 
-Currently, two official plugins are available:
+### 1. Connect Repository
+- Go to [vercel.com](https://vercel.com) and click **Add New → Project**
+- Import your GitHub repo (`rudraksh-mall/codePrep`)
+- Set **Root Directory** to `client`
+- Framework preset: **Vite** (auto-detected)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### 2. Environment Variables
+In the Vercel dashboard → Project Settings → Environment Variables, add:
 
-## React Compiler
+| Variable | Value |
+|---|---|
+| `VITE_API_URL` | `https://<your-render-api>.onrender.com/api` |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Replace with your actual Render backend URL once deployed.
 
-## Expanding the ESLint configuration
+### 3. Deploy
+Click **Deploy**. Vercel will run `npm run build` and publish the `dist/` folder.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 4. Verify
+- SPA routing works on all paths (handled by `vercel.json` rewrites)
+- The app connects to the backend API via `VITE_API_URL`
+- Refresh on any route returns the correct page, not a 404
+
+## Local Development
+
+```bash
+VITE_API_URL=http://localhost:5000/api npm run dev
+```
