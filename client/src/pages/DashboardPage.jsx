@@ -35,6 +35,13 @@ export default function DashboardPage() {
         Dashboard
       </h1>
 
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
+          Activity
+        </h2>
+        <HeatmapCalendar data={heatmapData} days={365} />
+      </Card>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Solved" value={summary?.totalSolved ?? 0} icon="✅" />
         <StatCard
@@ -77,13 +84,6 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
-      </Card>
-
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-4">
-          Activity
-        </h2>
-        <HeatmapCalendar data={heatmapData} days={365} />
       </Card>
     </div>
   );

@@ -3,9 +3,6 @@ import { useState, useMemo } from 'react';
 const DAY_LABELS = ['Mon', '', 'Wed', '', 'Fri', '', ''];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-const CELL_SIZE = 12;
-const GAP = 2;
-
 function getIntensity(count) {
   if (!count) return 'bg-surface-800';
   if (count === 1) return 'bg-emerald-900';
@@ -25,7 +22,7 @@ function buildGrid(data, days = 365) {
   start.setDate(start.getDate() - days + 1);
   start.setHours(0, 0, 0, 0);
 
-  // Monday = 0
+  // Monday-first alignment
   const startDay = (start.getDay() + 6) % 7;
 
   const cols = Math.ceil((days + startDay) / 7);
@@ -47,7 +44,12 @@ function buildGrid(data, days = 365) {
         continue;
       }
 
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr =
+  current.getFullYear() +
+  "-" +
+  String(current.getMonth() + 1).padStart(2, "0") +
+  "-" +
+  String(current.getDate()).padStart(2, "0");
       const month = current.getMonth();
 
       if (month !== previousMonth) {
@@ -73,6 +75,8 @@ function buildGrid(data, days = 365) {
 export default function HeatmapCalendar({ data = [], days = 365 }) {
   const [tooltip, setTooltip] = useState(null);
 
+  console.log("HEATMAP DATA:", data);
+
   const { cells, monthLabels, cols } = useMemo(
     () => buildGrid(data, days),
     [data, days]
@@ -81,95 +85,90 @@ export default function HeatmapCalendar({ data = [], days = 365 }) {
   return (
     <div className="relative w-full">
       <div className="flex gap-3">
-        {/* Day labels */}
-        <div className="flex flex-col justify-between pt-5 text-xs text-surface-400">
-          {DAY_LABELS.map((label, i) => (
-            <div
-              key={i}
-              style={{ height: `${CELL_SIZE}px` }}
-            >
+        {/* Day Labels */}
+        <div className="flex flex-col justify-between pt-6 text-xs text-surface-400 shrink-0">
+          {DAY_LABELS.map((label, index) => (
+            <div key={index} className="h-4 flex items-center">
               {label}
             </div>
           ))}
         </div>
 
         {/* Heatmap */}
-        <div className="overflow-x-auto pb-2">
+        <div className="flex-1 min-w-0">
+          {/* Month Labels */}
           <div
+            className="grid mb-2 text-xs text-surface-400"
             style={{
-              width: `${cols * (CELL_SIZE + GAP)}px`,
+              gridTemplateColumns: `repeat(${cols}, 1fr)`,
             }}
           >
-            {/* Month Labels */}
-            <div className="relative h-5 mb-2">
-              {monthLabels.map((month) => (
-                <span
-                  key={`${month.label}-${month.col}`}
-                  className="absolute text-xs text-surface-400"
-                  style={{
-                    left: `${month.col * (CELL_SIZE + GAP)}px`,
-                  }}
+            {Array.from({ length: cols }).map((_, col) => {
+              const month = monthLabels.find((m) => m.col === col);
+
+              return (
+                <div
+                  key={col}
+                  className="text-left whitespace-nowrap"
                 >
-                  {month.label}
-                </span>
-              ))}
-            </div>
+                  {month?.label || ''}
+                </div>
+              );
+            })}
+          </div>
 
-            {/* Grid */}
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: `repeat(${cols}, ${CELL_SIZE}px)`,
-                gridTemplateRows: `repeat(7, ${CELL_SIZE}px)`,
-                gap: `${GAP}px`,
-              }}
-            >
-              {cells.map((cell, i) => {
-                if (!cell) {
-                  return (
-                    <div
-                      key={i}
-                      style={{
-                        width: CELL_SIZE,
-                        height: CELL_SIZE,
-                      }}
-                    />
-                  );
-                }
-
+          {/* Heatmap Grid */}
+          <div
+            className="grid w-full"
+            style={{
+              gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+              gridTemplateRows: 'repeat(7, 1fr)',
+              gap: '2px',
+            }}
+          >
+            {cells.map((cell, i) => {
+              if (!cell) {
                 return (
                   <div
                     key={i}
-                    className={`rounded-sm cursor-pointer transition-colors ${getIntensity(
-                      cell.count
-                    )}`}
+                    className="aspect-square"
                     style={{
-                      width: CELL_SIZE,
-                      height: CELL_SIZE,
-                      gridColumn: cell.col + 1,
-                      gridRow: cell.row + 1,
+                      gridColumn: (i % cols) + 1,
                     }}
-                    onMouseEnter={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-
-                      setTooltip({
-                        x: rect.left + rect.width / 2,
-                        y: rect.top - 10,
-                        date: cell.date,
-                        count: cell.count,
-                      });
-                    }}
-                    onMouseLeave={() => setTooltip(null)}
                   />
                 );
-              })}
-            </div>
+              }
+
+              return (
+                <div
+                  key={i}
+                  className={`aspect-square rounded-[2px] cursor-pointer transition-all hover:ring-1 hover:ring-white/30 ${getIntensity(
+                    cell.count
+                  )}`}
+                  style={{
+                    gridColumn: cell.col + 1,
+                    gridRow: cell.row + 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+
+                    setTooltip({
+                      x: rect.left + rect.width / 2,
+                      y: rect.top - 10,
+                      date: cell.date,
+                      count: cell.count,
+                    });
+                  }}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-end gap-1 mt-3 text-xs text-surface-400">
+      <div className="flex items-center justify-end gap-1 mt-4 text-xs text-surface-400">
         <span>Less</span>
 
         <div className="w-3 h-3 rounded-sm bg-surface-800" />
@@ -183,7 +182,7 @@ export default function HeatmapCalendar({ data = [], days = 365 }) {
       {/* Tooltip */}
       {tooltip && (
         <div
-          className="fixed z-50 px-2 py-1 text-xs text-white rounded shadow-lg pointer-events-none bg-surface-700 -translate-x-1/2"
+          className="fixed z-50 px-2 py-1 text-xs text-white rounded shadow-lg pointer-events-none bg-surface-700 -translate-x-1/2 whitespace-nowrap"
           style={{
             left: tooltip.x,
             top: tooltip.y,

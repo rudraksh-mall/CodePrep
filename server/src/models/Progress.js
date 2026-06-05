@@ -7,19 +7,27 @@ const progressSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
     problemId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Problem",
       required: true,
     },
+
     status: {
       type: String,
       enum: ["attempted", "solved", "unsolved"],
       default: "unsolved",
     },
+
     timeSpentMinutes: {
       type: Number,
       default: 0,
+    },
+
+    solvedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true },

@@ -107,31 +107,64 @@ async function getByDifficulty(userId) {
   return results;
 }
 
-async function getOverTime(userId, days = 30) {
+async function getOverTime(userId, days = 365) {
   const objectId = new mongoose.Types.ObjectId(userId);
+
+  console.log("Analytics User:", userId);
+
+  const allDocs = await Progress.find({});
+  console.log("ALL DOCS:", allDocs.length);
+
+  const userDocs = await Progress.find({
+    userId: objectId,
+  });
+
+  console.log("USER DOCS:", userDocs.length);
+
+  const solvedDocs = await Progress.find({
+    userId: objectId,
+    status: "solved",
+  });
+
+  console.log("SOLVED DOCS:", solvedDocs.length);
+  console.log("SOLVED:", solvedDocs);
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
 
   const results = await Progress.aggregate([
-    {
-      $match: {
-        userId: objectId,
-        status: "solved",
-        updatedAt: { $gte: cutoff },
-      },
+  {
+    $match: {
+      userId: objectId,
+      status: "solved",
+      solvedAt: { $gte: cutoff },
     },
-    {
-      $group: {
-        _id: { $dateToString: { format: "%Y-%m-%d", date: "$updatedAt" } },
-        count: { $sum: 1 },
+  },
+  {
+    $group: {
+      _id: {
+        $dateToString: {
+          format: "%Y-%m-%d",
+          date: "$solvedAt",
+          timezone: "Asia/Kolkata",
+        },
       },
+      count: { $sum: 1 },
     },
-    { $sort: { _id: 1 } },
-    { $project: { _id: 0, date: "$_id", count: 1 } },
-  ]);
+  },
+  {
+    $sort: { _id: 1 },
+  },
+  {
+    $project: {
+      _id: 0,
+      date: "$_id",
+      count: 1,
+    },
+  },
+]);
 
-  return results;
+return results;
 }
 
 module.exports = {

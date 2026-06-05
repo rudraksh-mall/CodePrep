@@ -2,10 +2,23 @@ const Progress = require("../models/Progress");
 const User = require("../models/User");
 
 async function upsertProgress({ userId, problemId, status, timeSpentMinutes }) {
+  const updateData = {
+    status,
+    timeSpentMinutes,
+    updatedAt: new Date(),
+  };
+
+  if (status === "solved") {
+    updateData.solvedAt = new Date();
+  }
+
   const progress = await Progress.findOneAndUpdate(
     { userId, problemId },
-    { status, timeSpentMinutes, updatedAt: new Date() },
-    { upsert: true, new: true },
+    { $set: updateData },
+    {
+      upsert: true,
+      new: true,
+    }
   );
 
   if (status === "solved") {
