@@ -1,15 +1,29 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import LoginPage from "../pages/auth/LoginPage";
-import RegisterPage from "../pages/auth/RegisterPage";
-import ProblemsPage from "../pages/ProblemsPage";
-import ProblemDetailPage from "../pages/ProblemDetailPage";
-import DashboardPage from "../pages/DashboardPage";
-import ResumeAnalyzerPage from "../pages/ResumeAnalyzerPage";
-import AssistantPage from "../pages/AssistantPage";
-import RoadmapPage from "../pages/RoadmapPage";
-import AnalyticsPage from "../pages/AnalyticsPage";
+import ErrorBoundary from "../components/ui/ErrorBoundary";
+import Spinner from "../components/ui/Spinner";
 import AppLayout from "../components/layout/AppLayout";
+
+const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
+const RegisterPage = lazy(() => import("../pages/auth/RegisterPage"));
+const DashboardPage = lazy(() => import("../pages/DashboardPage"));
+const ProblemsPage = lazy(() => import("../pages/ProblemsPage"));
+const ProblemDetailPage = lazy(() => import("../pages/ProblemDetailPage"));
+const AssistantPage = lazy(() => import("../pages/AssistantPage"));
+const ResumeAnalyzerPage = lazy(() => import("../pages/ResumeAnalyzerPage"));
+const RoadmapPage = lazy(() => import("../pages/RoadmapPage"));
+const AnalyticsPage = lazy(() => import("../pages/AnalyticsPage"));
+
+function SuspenseWrapper({ children }) {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<Spinner />}>
+        {children}
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
 
 function ProtectedRoute({ children }) {
   const { token, isLoading } = useAuth();
@@ -32,11 +46,11 @@ function ProtectedRoute({ children }) {
 const router = createBrowserRouter([
   {
     path: "/login",
-    element: <LoginPage />,
+    element: <SuspenseWrapper><LoginPage /></SuspenseWrapper>,
   },
   {
     path: "/register",
-    element: <RegisterPage />,
+    element: <SuspenseWrapper><RegisterPage /></SuspenseWrapper>,
   },
   {
     path: "/",
@@ -49,13 +63,13 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { path: "/dashboard", element: <DashboardPage /> },
-      { path: "/problems", element: <ProblemsPage /> },
-      { path: "/problems/:slug", element: <ProblemDetailPage /> },
-      { path: "/assistant", element: <AssistantPage /> },
-      { path: "/resume", element: <ResumeAnalyzerPage /> },
-      { path: "/roadmap", element: <RoadmapPage /> },
-      { path: "/analytics", element: <AnalyticsPage /> },
+      { path: "/dashboard", element: <SuspenseWrapper><DashboardPage /></SuspenseWrapper> },
+      { path: "/problems", element: <SuspenseWrapper><ProblemsPage /></SuspenseWrapper> },
+      { path: "/problems/:slug", element: <SuspenseWrapper><ProblemDetailPage /></SuspenseWrapper> },
+      { path: "/assistant", element: <SuspenseWrapper><AssistantPage /></SuspenseWrapper> },
+      { path: "/resume", element: <SuspenseWrapper><ResumeAnalyzerPage /></SuspenseWrapper> },
+      { path: "/roadmap", element: <SuspenseWrapper><RoadmapPage /></SuspenseWrapper> },
+      { path: "/analytics", element: <SuspenseWrapper><AnalyticsPage /></SuspenseWrapper> },
     ],
   },
 ]);
