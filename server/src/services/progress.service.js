@@ -4,7 +4,7 @@ const User = require("../models/User");
 async function upsertProgress({ userId, problemId, status, timeSpentMinutes }) {
   const progress = await Progress.findOneAndUpdate(
     { userId, problemId },
-    { status, timeSpentMinutes },
+    { status, timeSpentMinutes, updatedAt: new Date() },
     { upsert: true, new: true },
   );
 

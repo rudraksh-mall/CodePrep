@@ -29,7 +29,6 @@ export default function DashboardPage() {
   const { data: heatmapData = [] } = useOverTime(365);
 
   if (summaryLoading) return <PageLoader />;
-console.log("VALUE", summary?.totalSolved);
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 space-y-8">
       <h1 className="text-2xl font-bold text-surface-900 dark:text-surface-100">

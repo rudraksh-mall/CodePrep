@@ -30,5 +30,6 @@ export function useOverTime(days = 30) {
     queryKey: ['analytics', 'over-time', days],
     queryFn: () => analyticsApi.getOverTime(days),
     staleTime: 300000,
+    refetchOnMount: true,
   });
 }
