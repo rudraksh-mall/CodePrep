@@ -86,4 +86,24 @@ problemSchema.index(
   { weights: { title: 3, description: 1 } },
 );
 
+const { upsertProblemInPinecone, removeProblemFromPinecone } = require("../services/pineconeSync.service");
+
+problemSchema.post("save", async function () {
+  try {
+    await upsertProblemInPinecone(this);
+  } catch {
+    // non-blocking; Pinecone may not be configured
+  }
+});
+
+problemSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    try {
+      await removeProblemFromPinecone(doc.slug);
+    } catch {
+      // non-blocking
+    }
+  }
+});
+
 module.exports = mongoose.model("Problem", problemSchema);

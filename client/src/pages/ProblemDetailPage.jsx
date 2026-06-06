@@ -7,6 +7,7 @@ import useProblem from '../hooks/useProblem';
 import DifficultyBadge from '../components/problems/DifficultyBadge';
 import Button from '../components/ui/Button';
 import { PageLoader } from '../components/ui/Loader';
+import { useToast } from '../components/ui/Toast';
 import HintPanel from '../components/ai/HintPanel';
 import * as noteApi from '../api/note.api';
 import * as progressApi from '../api/progress.api';
@@ -37,11 +38,14 @@ export default function ProblemDetailPage() {
   const { slug } = useParams();
   const { data: problem, isLoading } = useProblem(slug);
   const queryClient = useQueryClient();
+  const showToast = useToast();
 
   const [progress, setProgress] = useState(null);
   const [notes, setNotes] = useState('');
   const [saveStatus, setSaveStatus] = useState('idle');
+  const [hintsUsed, setHintsUsed] = useState(0);
   const debounceRef = useRef(null);
+  const pageEntryTime = useRef(Date.now());
 
   const problemId = problem?._id;
 
@@ -57,10 +61,16 @@ export default function ProblemDetailPage() {
   }, [savedProgress]);
 
   const progressMutation = useMutation({
-    mutationFn: (status) => progressApi.upsertProgress(problemId, status),
-    onSuccess: () => {
+    mutationFn: (status) => {
+      const timeSpentMinutes = Math.round((Date.now() - pageEntryTime.current) / 60000);
+      return progressApi.upsertProgress(problemId, status, { hintsUsed, timeSpentMinutes });
+    },
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['progress', problemId] });
       queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      if (data?.isDailyComplete) {
+        showToast({ type: 'success', title: 'Daily problem complete! 🔥', message: 'Streak maintained' });
+      }
     },
   });
 
@@ -219,7 +229,7 @@ export default function ProblemDetailPage() {
           )}
         </div>
 
-        <HintPanel problemTitle={problem.title} problemDescription={problem.description} />
+        <HintPanel problemTitle={problem.title} problemDescription={problem.description} onHintUsed={() => setHintsUsed((c) => c + 1)} />
 
         <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">

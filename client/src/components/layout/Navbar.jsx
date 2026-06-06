@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useDailyProblem } from '../../hooks/useDailyProblem';
+import { useProgress } from '../../hooks/useProgress';
 
 function getInitials(name) {
   if (!name) return '?';
@@ -15,6 +17,13 @@ export default function Navbar({ onToggleMobileDrawer }) {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const { data: dailyProblem } = useDailyProblem();
+  const { data: progressData } = useProgress();
+
+  const isDailySolved = dailyProblem?.problemSlug && progressData?.some(
+    (p) => p.problemId?.slug === dailyProblem.problemSlug && p.status === 'solved'
+  );
+  const showDailyDot = Boolean(dailyProblem && !isDailySolved);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -47,9 +56,12 @@ export default function Navbar({ onToggleMobileDrawer }) {
               <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
             </svg>
           </button>
-          <Link to="/dashboard" className="flex items-center gap-2 text-lg font-bold text-primary-600 dark:text-primary-400">
+          <Link to="/dashboard" className="relative flex items-center gap-2 text-lg font-bold text-primary-600 dark:text-primary-400">
             <span className="text-xl">⚡</span>
             <span className="truncate">CodePrep AI</span>
+            {showDailyDot && (
+              <span className="absolute -top-1 -right-2 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+            )}
           </Link>
         </div>
 

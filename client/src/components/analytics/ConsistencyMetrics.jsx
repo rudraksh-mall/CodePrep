@@ -25,6 +25,19 @@ export default function ConsistencyMetrics({ data }) {
     icon: '🏆',
   });
 
+  if (data.longestDailyStreak > 0) {
+    items.push({
+      label: 'Longest Daily Streak',
+      value: `${data.longestDailyStreak} day${data.longestDailyStreak !== 1 ? 's' : ''}`,
+      icon: '🎯',
+    });
+    items.push({
+      label: 'Current Daily Streak',
+      value: `${data.currentDailyStreak} day${data.currentDailyStreak !== 1 ? 's' : ''}`,
+      icon: '🔥',
+    });
+  }
+
   if (data.averageSolvesPerDay > 0) {
     items.push({
       label: 'Avg Solves / Day',

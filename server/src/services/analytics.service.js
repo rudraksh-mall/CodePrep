@@ -9,13 +9,15 @@ async function getSummary(userId) {
     Progress.countDocuments({ userId, status: "attempted" }),
   ]);
 
-  const user = await User.findById(userId).select("streak");
+  const user = await User.findById(userId).select("streak dailyStreak");
 
   return {
     totalSolved: solved,
     totalAttempted: attempted,
     currentStreak: user?.streak?.current || 0,
     longestStreak: user?.streak?.longest || 0,
+    currentDailyStreak: user?.dailyStreak?.current || 0,
+    longestDailyStreak: user?.dailyStreak?.longest || 0,
   };
 }
 
@@ -110,25 +112,6 @@ async function getByDifficulty(userId) {
 async function getOverTime(userId, days = 365) {
   const objectId = new mongoose.Types.ObjectId(userId);
 
-  console.log("Analytics User:", userId);
-
-  const allDocs = await Progress.find({});
-  console.log("ALL DOCS:", allDocs.length);
-
-  const userDocs = await Progress.find({
-    userId: objectId,
-  });
-
-  console.log("USER DOCS:", userDocs.length);
-
-  const solvedDocs = await Progress.find({
-    userId: objectId,
-    status: "solved",
-  });
-
-  console.log("SOLVED DOCS:", solvedDocs.length);
-  console.log("SOLVED:", solvedDocs);
-
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
 
@@ -203,7 +186,7 @@ function categorizeTopic(topic) {
 async function getConsistency(userId) {
   const objectId = new mongoose.Types.ObjectId(userId);
 
-  const user = await User.findById(userId).select('streak');
+  const user = await User.findById(userId).select('streak dailyStreak');
   const totalSolved = await Progress.countDocuments({ userId: objectId, status: 'solved' });
 
   const firstSolve = await Progress.findOne({ userId: objectId, status: 'solved', solvedAt: { $ne: null } })
@@ -260,6 +243,8 @@ async function getConsistency(userId) {
 
   return {
     longestStreak: user?.streak?.longest || 0,
+    longestDailyStreak: user?.dailyStreak?.longest || 0,
+    currentDailyStreak: user?.dailyStreak?.current || 0,
     bestSolvingDay: bestDay.length > 0 ? bestDay[0] : null,
     bestSolvingWeek: bestWeek.length > 0 ? bestWeek[0] : null,
     averageSolvesPerDay: avgPerDay,
@@ -439,7 +424,7 @@ async function getWeakTopics(userId) {
     })
     .sort((a, b) => b.weaknessPct - a.weaknessPct);
 
-  return weak;
+  return weak.filter((t) => t.weaknessPct > 0);
 }
 
 module.exports = {

@@ -6,11 +6,11 @@ import * as aiApi from '../api/ai.api';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { PageLoader } from '../components/ui/Loader';
-import StreakCard from '../components/progress/StreakCard';
 import TopicProgressBar from '../components/progress/TopicProgressBar';
 import HeatmapCalendar from '../components/progress/HeatmapCalendar';
 import PlatformConnector from '../components/ai/PlatformConnector';
 import { useSummary, useByTopic, useByDifficulty, useOverTime } from '../hooks/useAnalytics';
+import DailyProblemWidget from '../components/ai/DailyProblemWidget';
 
 function loadCompletedWeeks(roadmapId, weeks) {
   const completed = {};
@@ -234,6 +234,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <DailyProblemWidget />
       {/* Welcome Section */}
       <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-6">
         <div className="flex items-center gap-4">
@@ -560,8 +561,7 @@ export default function DashboardPage() {
             )}
           </Card>
 
-          {/* Streak Card - standalone */}
-          <StreakCard current={currentStreak} longest={longestStreak} />
+
         </div>
       </div>
 

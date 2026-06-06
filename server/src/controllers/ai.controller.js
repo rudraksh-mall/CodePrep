@@ -3,9 +3,20 @@ const resumeService = require("../services/ai/resume.service");
 const interviewQuestionService = require("../services/ai/interviewQuestion.service");
 const assistantService = require("../services/ai/assistant.service");
 const roadmapService = require("../services/ai/roadmap.service");
+const dailyProblemPickerService = require("../services/dailyProblemPicker.service");
 const Resume = require("../models/Resume");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
+
+async function getDailyProblem(req, res) {
+  const result = await dailyProblemPickerService.getDailyProblem(req.user._id);
+  res.status(200).json(new ApiResponse(200, result));
+}
+
+async function refreshDailyProblem(req, res) {
+  const result = await dailyProblemPickerService.refreshDailyProblem(req.user._id);
+  res.status(200).json(new ApiResponse(200, result));
+}
 
 async function generateHint(req, res) {
   const { problemTitle, problemDescription, hintLevel } = req.body;
@@ -132,4 +143,4 @@ async function getLatestResumeAnalysis(req, res) {
   );
 }
 
-module.exports = { generateHint, uploadResume, generateInterviewQuestions, chat, generateRoadmap, getRoadmap, getLatestResumeAnalysis };
+module.exports = { getDailyProblem, refreshDailyProblem, generateHint, uploadResume, generateInterviewQuestions, chat, generateRoadmap, getRoadmap, getLatestResumeAnalysis };

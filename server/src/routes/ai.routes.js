@@ -71,6 +71,8 @@ const roadmapSchema = z.object({
 router.post("/roadmap", validate(roadmapSchema), aiController.generateRoadmap);
 router.get("/roadmap", aiController.getRoadmap);
 
+router.get("/daily-problem", aiController.getDailyProblem);
+router.post("/daily-problem/refresh", aiController.refreshDailyProblem);
 router.get("/resume/latest", aiController.getLatestResumeAnalysis);
 
 router.post("/resume/upload", (req, res, next) => {

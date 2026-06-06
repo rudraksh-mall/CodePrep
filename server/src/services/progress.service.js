@@ -39,11 +39,24 @@ async function upsertProgress({ userId, problemId, status, timeSpentMinutes, hin
     // non-blocking; learning event is auxiliary
   }
 
+  let isDailyComplete = false;
+
   if (status === "solved") {
     await updateStreak(userId);
+    try {
+      const Problem = require("../models/Problem");
+      const problem = await Problem.findById(problemId).select("slug").lean();
+      const user = await User.findById(userId).select("dailyProblem").lean();
+      if (problem && user?.dailyProblem?.problemSlug === problem.slug) {
+        isDailyComplete = true;
+        await updateDailyStreak(userId);
+      }
+    } catch {
+      // non-blocking
+    }
   }
 
-  return progress;
+  return { progress, isDailyComplete };
 }
 
 async function updateStreak(userId) {
@@ -78,6 +91,40 @@ async function updateStreak(userId) {
     "streak.current": current,
     "streak.longest": longest,
     "streak.lastSolvedDate": today,
+  });
+}
+
+async function updateDailyStreak(userId) {
+  const user = await User.findById(userId);
+  if (!user) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const lastSolved = user.dailyStreak.lastSolvedDate;
+
+  let current = 1;
+
+  if (lastSolved) {
+    const lastStart = new Date(lastSolved);
+    lastStart.setHours(0, 0, 0, 0);
+
+    if (lastStart.getTime() === today.getTime()) {
+      current = user.dailyStreak.current;
+    } else if (lastStart.getTime() === yesterday.getTime()) {
+      current = user.dailyStreak.current + 1;
+    }
+  }
+
+  const longest = Math.max(current, user.dailyStreak.longest || 0);
+
+  await User.findByIdAndUpdate(userId, {
+    "dailyStreak.current": current,
+    "dailyStreak.longest": longest,
+    "dailyStreak.lastSolvedDate": today,
   });
 }
 
@@ -116,6 +163,7 @@ async function getAnalyticsSummary(userId) {
 module.exports = {
   upsertProgress,
   updateStreak,
+  updateDailyStreak,
   getUserProgress,
   getProgressForProblem,
   getAnalyticsSummary,

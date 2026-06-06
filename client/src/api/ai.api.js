@@ -1,5 +1,7 @@
 import api from './axios';
 
+export const getDailyProblem = () => api.get('/ai/daily-problem').then(r => r.data.data);
+
 export async function getHint({ problemTitle, problemDescription, hintLevel }) {
   const res = await api.post('/ai/hint', { problemTitle, problemDescription, hintLevel });
   return res.data.data;
