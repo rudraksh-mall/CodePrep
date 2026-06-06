@@ -2,12 +2,12 @@ require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const { RecursiveCharacterTextSplitter } = require("@langchain/textsplitters");
-const { Chroma } = require("@langchain/community/vectorstores/chroma");
+const { PineconeStore } = require("@langchain/pinecone");
 const { OpenAIEmbeddings } = require("@langchain/openai");
 const { openrouterApiKey } = require("../config/env");
+const { getPineconeIndex, deleteAllVectors, INDEX_NAME } = require("../config/pinecone");
 
 const DOCS_DIR = path.resolve(__dirname, "../data/dsa_docs");
-const COLLECTION_NAME = "dsa_knowledge_base";
 
 async function ingestDSADocs() {
   if (!openrouterApiKey) {
@@ -52,11 +52,12 @@ async function ingestDSADocs() {
     configuration: { baseURL: "https://openrouter.ai/api/v1" },
   });
 
-  await Chroma.fromDocuments(splitDocs, embeddings, {
-    collectionName: COLLECTION_NAME,
-  });
+  const pineconeIndex = await getPineconeIndex();
+  await deleteAllVectors();
 
-  console.log(`Successfully ingested ${splitDocs.length} chunks into ChromaDB collection "${COLLECTION_NAME}"`);
+  await PineconeStore.fromDocuments(splitDocs, embeddings, { pineconeIndex });
+
+  console.log(`Successfully ingested ${splitDocs.length} chunks into Pinecone index "${INDEX_NAME}"`);
 }
 
 ingestDSADocs().catch((err) => {
