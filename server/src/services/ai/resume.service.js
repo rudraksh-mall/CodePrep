@@ -3,6 +3,7 @@ const { JsonOutputParser } = require("@langchain/core/output_parsers");
 const { getLLM } = require("./embeddings.service");
 const { extractTextFromBuffer } = require("../../utils/pdfParser");
 const Resume = require("../../models/Resume");
+const InterviewQuestion = require("../../models/InterviewQuestion");
 
 const MAX_TEXT_LENGTH = 8000;
 
@@ -44,4 +45,24 @@ async function saveResumeAnalysis({ userId, fileName, rawText, extractedData }) 
   return resume;
 }
 
-module.exports = { analyzeResume, saveResumeAnalysis };
+async function getLatestResumeAnalysis(userId) {
+  const resume = await Resume.findOne({ userId }).sort({ createdAt: -1 });
+  if (!resume) return null;
+
+  const interviewQuestion = await InterviewQuestion.findOne({
+    userId,
+    resumeId: resume._id,
+  }).sort({ createdAt: -1 });
+
+  return {
+    resumeId: resume._id,
+    fileName: resume.fileName,
+    targetRole: interviewQuestion?.targetRole || null,
+    extractedSkills: resume.extractedData?.extractedSkills || [],
+    questions: interviewQuestion?.questions || [],
+    createdAt: resume.createdAt,
+    questionsCreatedAt: interviewQuestion?.createdAt || null,
+  };
+}
+
+module.exports = { analyzeResume, saveResumeAnalysis, getLatestResumeAnalysis };

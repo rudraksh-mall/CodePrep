@@ -6,10 +6,10 @@
 React · Vite · Tailwind CSS · React Query · Recharts
 
 ### Backend
-Node.js · Express · MongoDB · Mongoose · LangChain · ChromaDB · Gemini
+Node.js · Express · MongoDB · Mongoose · LangChain · Pinecone · Gemini
 
 ### AI / ML
-LangChain · Gemini · ChromaDB
+LangChain · Gemini · Pinecone
 
 ---
 

@@ -12,6 +12,8 @@ const progressRoutes = require('./routes/progress.routes');
 const analyticsRoutes = require('./routes/analytics.routes');
 const noteRoutes = require('./routes/note.routes');
 const aiRoutes = require('./routes/ai.routes');
+const platformRoutes = require('./routes/platform.routes');
+const interviewRoutes = require('./routes/interview.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -61,6 +63,8 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/platforms', platformRoutes);
+app.use('/api/interview', interviewRoutes);
 
 app.use((_req, _res, next) => {
   next(new ApiError(404, 'Route not found'));

@@ -2,7 +2,7 @@ const progressService = require("../services/progress.service");
 const ApiResponse = require("../utils/ApiResponse");
 
 async function upsertProgress(req, res) {
-  const result = await progressService.upsertProgress({
+  const { progress, isDailyComplete } = await progressService.upsertProgress({
     userId: req.user._id,
     problemId: req.body.problemId,
     status: req.body.status,
@@ -11,7 +11,7 @@ async function upsertProgress(req, res) {
 
   res
     .status(200)
-    .json(new ApiResponse(200, result, "Progress updated successfully"));
+    .json(new ApiResponse(200, { progress, isDailyComplete }, "Progress updated successfully"));
 }
 
 async function getUserProgress(req, res) {
@@ -33,8 +33,15 @@ async function getProgressForProblem(req, res) {
   res.status(200).json(new ApiResponse(200, result));
 }
 
+async function getAnalyticsSummary(req, res) {
+  const result = await progressService.getAnalyticsSummary(req.user._id);
+
+  res.status(200).json(new ApiResponse(200, result));
+}
+
 module.exports = {
   upsertProgress,
   getUserProgress,
   getProgressForProblem,
+  getAnalyticsSummary,
 };

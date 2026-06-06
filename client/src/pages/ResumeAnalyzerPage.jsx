@@ -1,34 +1,96 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import * as aiApi from '../api/ai.api';
 import ResumeUploader from '../components/ai/ResumeUploader';
 import QuestionCard from '../components/ai/QuestionCard';
+import RoleSelect from '../components/ai/RoleSelect';
 import Button from '../components/ui/Button';
+import Spinner from '../components/ui/Spinner';
 
 const categories = ['all', 'technical', 'behavioral', 'system design'];
 
 export default function ResumeAnalyzerPage() {
-  const [step, setStep] = useState(1);
+  const [phase, setPhase] = useState('loading');
   const [resumeId, setResumeId] = useState(null);
   const [targetRole, setTargetRole] = useState('');
   const [questions, setQuestions] = useState([]);
+  const [extractedSkills, setExtractedSkills] = useState([]);
+  const [resumeFileName, setResumeFileName] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
+  const [resumeKey, setResumeKey] = useState(0);
+  const [roleError, setRoleError] = useState('');
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await aiApi.getLatestResumeAnalysis();
+        if (data?.questions?.length > 0) {
+          setResumeId(data.resumeId);
+          setExtractedSkills(data.extractedSkills || []);
+          setTargetRole(data.targetRole || '');
+          setQuestions(data.questions);
+          setResumeFileName(data.fileName);
+          setPhase('previous');
+          return;
+        }
+        if (data) {
+          setResumeId(data.resumeId);
+          setExtractedSkills(data.extractedSkills || []);
+          setTargetRole(data.targetRole || '');
+          setResumeFileName(data.fileName);
+        }
+      } catch {
+        /* no analysis found */
+      }
+      setPhase('upload');
+    }
+    load();
+  }, []);
+
+  function startNewAnalysis() {
+    setPhase('upload');
+    setResumeId(null);
+    setTargetRole('');
+    setQuestions([]);
+    setExtractedSkills([]);
+    setResumeFileName(null);
+    setCategoryFilter('all');
+    setError('');
+    setRoleError('');
+    setResumeKey((k) => k + 1);
+  }
+
+  function continuePreviousAnalysis() {
+    setPhase('workspace');
+  }
 
   function handleUploadComplete(data) {
     setResumeId(data.resumeId);
+    setExtractedSkills(data.extractedData?.extractedSkills || []);
+    setResumeFileName(data.fileName || null);
+    setQuestions([]);
+    setPhase('analyze');
   }
 
-  function handleBackToStep1() {
-    setStep(1);
+  function handleBackToUpload() {
+    setPhase('upload');
     setResumeId(null);
     setQuestions([]);
+    setExtractedSkills([]);
+    setResumeFileName(null);
     setCategoryFilter('all');
+    setError('');
+    setRoleError('');
+    setResumeKey((k) => k + 1);
   }
 
   async function handleGenerate() {
-    if (!targetRole.trim()) return;
-
+    if (!targetRole.trim()) {
+      setRoleError('Please select a target role');
+      return;
+    }
+    setRoleError('');
     setGenerating(true);
     setError('');
 
@@ -38,6 +100,7 @@ export default function ResumeAnalyzerPage() {
         questionCount: 15,
       });
       setQuestions(data.questions || []);
+      setPhase('workspace');
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to generate questions');
     } finally {
@@ -45,9 +108,24 @@ export default function ResumeAnalyzerPage() {
     }
   }
 
-  const filtered = categoryFilter === 'all'
-    ? questions
-    : questions.filter((q) => q.category === categoryFilter);
+  function handleGenerateNew() {
+    setQuestions([]);
+    setCategoryFilter('all');
+    setPhase('analyze');
+  }
+
+  const filtered =
+    categoryFilter === 'all'
+      ? questions
+      : questions.filter((q) => q.category === categoryFilter);
+
+  if (phase === 'loading') {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Spinner fullPage={false} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -55,101 +133,184 @@ export default function ResumeAnalyzerPage() {
         Resume Analyzer
       </h1>
 
-      <div className="flex items-center gap-4">
-        <div className={`flex items-center gap-2 text-sm font-medium ${step >= 1 ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400'}`}>
-          <span className={`flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold border-2 ${
-            step >= 1 ? 'border-primary-600 dark:border-primary-400 bg-primary-600 dark:bg-primary-400 text-white' : 'border-surface-300 dark:border-surface-600'
-          }`}>1</span>
-          Upload Resume
-        </div>
-        <div className="h-px flex-1 bg-surface-200 dark:bg-surface-700" />
-        <div className={`flex items-center gap-2 text-sm font-medium ${step >= 2 ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400'}`}>
-          <span className={`flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold border-2 ${
-            step >= 2 ? 'border-primary-600 dark:border-primary-400 bg-primary-600 dark:bg-primary-400 text-white' : 'border-surface-300 dark:border-surface-600'
-          }`}>2</span>
-          Generate Questions
-        </div>
-      </div>
-
-      {step === 1 && (
-        <div className="space-y-6">
-          <ResumeUploader onUploadComplete={handleUploadComplete} />
-          {resumeId && (
-            <div className="flex justify-center">
-              <Button onClick={() => setStep(2)} size="lg">
-                Continue → Generate Interview Questions
-              </Button>
+      {phase === 'previous' && (
+        <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-6">
+          <p className="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-3">
+            Resume Analysis Summary
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+            <div>
+              <p className="text-xs text-surface-400 dark:text-surface-500">Resume</p>
+              <p className="text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
+                {resumeFileName || 'Uploaded resume'}
+              </p>
             </div>
-          )}
+            <div>
+              <p className="text-xs text-surface-400 dark:text-surface-500">Target Role</p>
+              <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                {targetRole || 'Not set'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-surface-400 dark:text-surface-500">Questions</p>
+              <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                {questions.length}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-surface-400 dark:text-surface-500">Skills</p>
+              <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                {extractedSkills.length}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button size="sm" variant="primary" onClick={continuePreviousAnalysis}>
+              Continue Previous Analysis
+            </Button>
+            <Button size="sm" variant="secondary" onClick={startNewAnalysis}>
+              Start New Analysis
+            </Button>
+          </div>
         </div>
       )}
 
-      {step === 2 && (
+      {phase === 'upload' && (
         <div className="space-y-6">
-          <button
-            onClick={handleBackToStep1}
-            className="inline-flex items-center gap-1 text-sm text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" /></svg>
-            Upload Different Resume
-          </button>
+          <ResumeUploader
+            key={resumeKey}
+            onUploadComplete={handleUploadComplete}
+          />
+        </div>
+      )}
 
+      {phase === 'analyze' && (
+        <div className="space-y-6">
           <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-5">
-            <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1.5">
-              Target Role
-            </label>
-            <div className="flex gap-3">
-              <input
-                type="text"
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100">
+                Resume Analysis
+              </h3>
+              <button
+                onClick={handleBackToUpload}
+                className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-500"
+              >
+                Upload different resume
+              </button>
+            </div>
+
+            {extractedSkills.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-medium text-surface-500 dark:text-surface-400 mb-2 uppercase tracking-wider">
+                  Extracted Skills
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {extractedSkills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="inline-flex items-center rounded-full bg-primary-100 dark:bg-primary-900/40 px-2.5 py-0.5 text-xs font-medium text-primary-700 dark:text-primary-300"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <RoleSelect
+                label="Target Role"
                 value={targetRole}
-                onChange={(e) => setTargetRole(e.target.value)}
-                placeholder="e.g. Senior Frontend Engineer"
-                className="block flex-1 rounded-lg border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-800 px-3 py-2 text-sm text-surface-900 dark:text-surface-100 placeholder-surface-400 dark:placeholder-surface-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                onChange={(val) => {
+                  setTargetRole(val);
+                  setRoleError('');
+                }}
+                error={roleError}
               />
               <Button onClick={handleGenerate} loading={generating} disabled={!targetRole.trim()}>
                 Generate Questions
               </Button>
+              {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
-            {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+          </div>
+        </div>
+      )}
+
+      {phase === 'workspace' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-5">
+            <p className="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-3">
+              Resume Analysis Summary
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+              <div>
+                <p className="text-xs text-surface-400 dark:text-surface-500">Resume</p>
+                <p className="text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
+                  {resumeFileName || 'Uploaded resume'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-surface-400 dark:text-surface-500">Target Role</p>
+                <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                  {targetRole}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-surface-400 dark:text-surface-500">Questions</p>
+                <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                  {questions.length}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-surface-400 dark:text-surface-500">Skills</p>
+                <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                  {extractedSkills.length}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button size="sm" variant="secondary" onClick={handleGenerateNew}>
+                Generate New Question Set
+              </Button>
+              <Button size="sm" variant="ghost" onClick={startNewAnalysis}>
+                Upload New Resume
+              </Button>
+            </div>
           </div>
 
-          {questions.length > 0 && (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setCategoryFilter(cat)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium border transition ${
-                      categoryFilter === cat
-                        ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-700'
-                        : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-400 border-surface-300 dark:border-surface-600 hover:bg-surface-50 dark:hover:bg-surface-700'
-                    }`}
-                  >
-                    {cat === 'all' ? 'All' : cat}
-                  </button>
-                ))}
-              </div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategoryFilter(cat)}
+                className={`rounded-full px-3 py-1 text-xs font-medium border transition ${
+                  categoryFilter === cat
+                    ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-700'
+                    : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-400 border-surface-300 dark:border-surface-600 hover:bg-surface-50 dark:hover:bg-surface-700'
+                }`}
+              >
+                {cat === 'all' ? 'All' : cat}
+              </button>
+            ))}
+          </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {filtered.map((q, i) => (
-                  <QuestionCard
-                    key={i}
-                    question={q.question}
-                    category={q.category}
-                    difficulty={q.difficulty}
-                    skill={q.skill}
-                    guidance={q.guidance}
-                  />
-                ))}
-              </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {filtered.map((q, i) => (
+              <QuestionCard
+                key={i}
+                question={q.question}
+                category={q.category}
+                difficulty={q.difficulty}
+                skill={q.skill}
+                guidance={q.guidance}
+              />
+            ))}
+          </div>
 
-              {filtered.length === 0 && (
-                <p className="text-sm text-surface-500 dark:text-surface-400 text-center py-8">
-                  No questions match the selected category.
-                </p>
-              )}
-            </>
+          {filtered.length === 0 && (
+            <p className="text-sm text-surface-500 dark:text-surface-400 text-center py-8">
+              No questions match the selected category.
+            </p>
           )}
         </div>
       )}

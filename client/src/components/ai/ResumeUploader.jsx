@@ -3,13 +3,13 @@ import * as aiApi from '../../api/ai.api';
 
 const MAX_SIZE = 5 * 1024 * 1024;
 
-export default function ResumeUploader({ onUploadComplete }) {
+export default function ResumeUploader({ onUploadComplete, initialResult = null }) {
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
   const [file, setFile] = useState(null);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(initialResult);
   const inputRef = useRef(null);
 
   const validate = useCallback((f) => {

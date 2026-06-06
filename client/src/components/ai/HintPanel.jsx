@@ -52,7 +52,7 @@ const LEVELS = [
   },
 ];
 
-export default function HintPanel({ problemTitle, problemDescription }) {
+export default function HintPanel({ problemTitle, problemDescription, onHintUsed }) {
   const [hints, setHints] = useState({});
   const [loading, setLoading] = useState({});
 
@@ -64,6 +64,7 @@ export default function HintPanel({ problemTitle, problemDescription }) {
     try {
       const result = await aiApi.getHint({ problemTitle, problemDescription, hintLevel: level });
       setHints((prev) => ({ ...prev, [level]: result.hint }));
+      onHintUsed?.();
     } catch {
       setHints((prev) => ({ ...prev, [level]: 'Failed to generate hint. Please try again.' }));
     } finally {

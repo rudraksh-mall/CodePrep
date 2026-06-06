@@ -50,34 +50,22 @@ const problemSchema = new mongoose.Schema(
     constraints: {
       type: String,
     },
-    testCases: [
-      {
-        input: String,
-        output: String,
-      },
-    ],
     solutions: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Solution",
       },
     ],
+    sourceUrl: {
+      type: String,
+    },
+    sourceLabel: {
+      type: String,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    },
-    acceptanceRate: {
-      type: Number,
-      default: 0,
-    },
-    totalSubmissions: {
-      type: Number,
-      default: 0,
-    },
-    acceptedSubmissions: {
-      type: Number,
-      default: 0,
     },
   },
   { timestamps: true },
@@ -97,5 +85,25 @@ problemSchema.index(
   { title: "text", description: "text" },
   { weights: { title: 3, description: 1 } },
 );
+
+const { upsertProblemInPinecone, removeProblemFromPinecone } = require("../services/pineconeSync.service");
+
+problemSchema.post("save", async function () {
+  try {
+    await upsertProblemInPinecone(this);
+  } catch {
+    // non-blocking; Pinecone may not be configured
+  }
+});
+
+problemSchema.post("findOneAndDelete", async function (doc) {
+  if (doc) {
+    try {
+      await removeProblemFromPinecone(doc.slug);
+    } catch {
+      // non-blocking
+    }
+  }
+});
 
 module.exports = mongoose.model("Problem", problemSchema);

@@ -59,6 +59,8 @@ router.post("/chat", validate(chatSchema), aiController.chat);
 
 const roadmapSchema = z.object({
   weakTopics: z.array(z.string()).optional(),
+  strongTopics: z.array(z.string()).optional(),
+  mode: z.enum(["manual", "analytics", "hybrid"]).optional(),
   targetRole: z.string().min(1, "targetRole is required"),
   duration: z.number().int().refine((val) => [30, 60, 90].includes(val), {
     message: "duration must be 30, 60, or 90",
@@ -68,6 +70,10 @@ const roadmapSchema = z.object({
 
 router.post("/roadmap", validate(roadmapSchema), aiController.generateRoadmap);
 router.get("/roadmap", aiController.getRoadmap);
+
+router.get("/daily-problem", aiController.getDailyProblem);
+router.post("/daily-problem/refresh", aiController.refreshDailyProblem);
+router.get("/resume/latest", aiController.getLatestResumeAnalysis);
 
 router.post("/resume/upload", (req, res, next) => {
   uploadPDF(req, res, (err) => {

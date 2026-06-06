@@ -1,5 +1,25 @@
-import { useReducer, useCallback } from 'react';
+import { useReducer, useCallback, useEffect } from 'react';
 import * as aiApi from '../api/ai.api';
+
+const STORAGE_KEY = 'chat_messages';
+
+function loadMessages() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const messages = raw ? JSON.parse(raw) : [];
+    return messages.filter((m) => !(m.role === 'assistant' && !m.content));
+  } catch {
+    return [];
+  }
+}
+
+function saveMessages(messages) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  } catch {
+    /* storage full or unavailable */
+  }
+}
 
 const initialState = {
   messages: [],
@@ -10,6 +30,15 @@ function reducer(state, action) {
   switch (action.type) {
     case 'ADD_MESSAGE':
       return { ...state, messages: [...state.messages, action.payload] };
+    case 'UPDATE_LAST_MESSAGE':
+      if (state.messages.length === 0) return state;
+      const messages = state.messages.map((msg, i) => {
+        if (i === state.messages.length - 1) {
+          return { ...msg, content: msg.content + action.payload };
+        }
+        return msg;
+      });
+      return { ...state, messages };
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
     case 'CLEAR':
@@ -20,11 +49,21 @@ function reducer(state, action) {
 }
 
 export default function useChat() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState, () => ({
+    messages: loadMessages(),
+    isLoading: false,
+  }));
+
+  useEffect(() => {
+    saveMessages(state.messages);
+  }, [state.messages]);
 
   const sendMessage = useCallback(async (text) => {
     const userMsg = { role: 'user', content: text, timestamp: new Date() };
     dispatch({ type: 'ADD_MESSAGE', payload: userMsg });
+
+    const assistantPlaceholder = { role: 'assistant', content: '', timestamp: new Date() };
+    dispatch({ type: 'ADD_MESSAGE', payload: assistantPlaceholder });
     dispatch({ type: 'SET_LOADING', payload: true });
 
     const chatHistory = state.messages.map((m) => ({
@@ -33,20 +72,42 @@ export default function useChat() {
     }));
 
     try {
-      const data = await aiApi.sendChatMessage({ message: text, chatHistory });
-      const assistantMsg = {
-        role: 'assistant',
-        content: data.response,
-        timestamp: new Date(),
-      };
-      dispatch({ type: 'ADD_MESSAGE', payload: assistantMsg });
+      const { reader, decoder } = await aiApi.sendChatMessageStream({
+        message: text,
+        chatHistory,
+      });
+
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+          const data = trimmed.slice(6);
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.chunk) {
+              dispatch({ type: 'UPDATE_LAST_MESSAGE', payload: parsed.chunk });
+            }
+          } catch {
+            /* skip malformed chunk */
+          }
+        }
+      }
     } catch {
-      const errorMsg = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
-        timestamp: new Date(),
-      };
-      dispatch({ type: 'ADD_MESSAGE', payload: errorMsg });
+      dispatch({
+        type: 'UPDATE_LAST_MESSAGE',
+        payload: '\n\n_Sorry, I encountered an error. Please try again._',
+      });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -55,6 +116,12 @@ export default function useChat() {
   const clearChat = useCallback(() => {
     dispatch({ type: 'CLEAR' });
   }, []);
+
+  useEffect(() => {
+    if (state.messages.length === 0) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [state.messages]);
 
   return { ...state, sendMessage, clearChat };
 }

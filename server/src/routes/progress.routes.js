@@ -12,10 +12,13 @@ const upsertSchema = z.object({
   problemId: z.string(),
   status: z.enum(["attempted", "solved", "unsolved"]),
   timeSpentMinutes: z.number().min(0).optional(),
+  hintsUsed: z.number().int().min(0).optional(),
+  attempts: z.number().int().min(1).optional(),
 });
 
 router.put("/", validate(upsertSchema), progressController.upsertProgress);
 router.get("/", progressController.getUserProgress);
+router.get("/analytics-summary", progressController.getAnalyticsSummary);
 router.get("/:problemId", progressController.getProgressForProblem);
 
 module.exports = router;

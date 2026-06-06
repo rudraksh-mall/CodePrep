@@ -59,4 +59,42 @@ async function getAssistantResponse({ message, chatHistory }) {
   return response;
 }
 
-module.exports = { getAssistantResponse };
+async function streamAssistantResponse({ message, chatHistory }) {
+  const embeddings = getEmbeddings();
+  const llm = getLLM();
+
+  let context = "No additional context available.";
+  try {
+    const pineconeIndex = await getPineconeIndex();
+    if (pineconeIndex) {
+      const vectorStore = new PineconeStore(embeddings, { pineconeIndex });
+      const retriever = vectorStore.asRetriever(5);
+      const docs = await retriever.invoke(message);
+      context = formatDocs(docs);
+    }
+  } catch {
+    context = "No additional context available.";
+  }
+
+  const formattedHistory = (chatHistory || [])
+    .filter((m) => m.role && m.content)
+    .map((m) => {
+      if (m.role === "assistant") return new AIMessage(m.content);
+      return new HumanMessage(m.content);
+    });
+
+  const prompt = ChatPromptTemplate.fromMessages([
+    ["system", systemPrompt.replace("{context}", context)],
+    ["placeholder", "{chatHistory}"],
+    ["human", "{question}"],
+  ]);
+
+  const chain = prompt.pipe(llm).pipe(new StringOutputParser());
+
+  return chain.stream({
+    question: message,
+    chatHistory: formattedHistory,
+  });
+}
+
+module.exports = { getAssistantResponse, streamAssistantResponse };

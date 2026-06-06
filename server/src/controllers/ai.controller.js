@@ -3,9 +3,20 @@ const resumeService = require("../services/ai/resume.service");
 const interviewQuestionService = require("../services/ai/interviewQuestion.service");
 const assistantService = require("../services/ai/assistant.service");
 const roadmapService = require("../services/ai/roadmap.service");
+const dailyProblemPickerService = require("../services/dailyProblemPicker.service");
 const Resume = require("../models/Resume");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
+
+async function getDailyProblem(req, res) {
+  const result = await dailyProblemPickerService.getDailyProblem(req.user._id);
+  res.status(200).json(new ApiResponse(200, result));
+}
+
+async function refreshDailyProblem(req, res) {
+  const result = await dailyProblemPickerService.refreshDailyProblem(req.user._id);
+  res.status(200).json(new ApiResponse(200, result));
+}
 
 async function generateHint(req, res) {
   const { problemTitle, problemDescription, hintLevel } = req.body;
@@ -32,7 +43,7 @@ async function uploadResume(req, res) {
   });
 
   res.status(200).json(
-    new ApiResponse(200, { resumeId: resume._id, extractedData }, "Resume analyzed"),
+    new ApiResponse(200, { resumeId: resume._id, fileName: resume.fileName, extractedData }, "Resume analyzed"),
   );
 }
 
@@ -69,19 +80,46 @@ async function generateInterviewQuestions(req, res) {
 async function chat(req, res) {
   const { message, chatHistory } = req.body;
 
-  const response = await assistantService.getAssistantResponse({
-    message,
-    chatHistory: chatHistory || [],
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  let isClientConnected = true;
+  req.on("close", () => {
+    isClientConnected = false;
   });
 
-  res.status(200).json(new ApiResponse(200, { response }, "Response generated"));
+  try {
+    const stream = await assistantService.streamAssistantResponse({
+      message,
+      chatHistory: chatHistory || [],
+    });
+
+    for await (const chunk of stream) {
+      if (!isClientConnected) break;
+      res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+    }
+
+    if (isClientConnected) {
+      res.write("data: [DONE]\n\n");
+    }
+  } catch (err) {
+    if (isClientConnected) {
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+    }
+  } finally {
+    res.end();
+  }
 }
 
 async function generateRoadmap(req, res) {
-  const { weakTopics, targetRole, duration, currentLevel } = req.body;
+  const { weakTopics, strongTopics, mode, targetRole, duration, currentLevel } = req.body;
 
   const roadmap = await roadmapService.generateRoadmap({
     weakTopics: weakTopics || [],
+    strongTopics: strongTopics || [],
+    mode: mode || "manual",
     targetRole,
     duration,
     currentLevel,
@@ -97,4 +135,12 @@ async function getRoadmap(req, res) {
   res.status(200).json(new ApiResponse(200, roadmap || null, roadmap ? "Roadmap retrieved" : "No roadmap found"));
 }
 
-module.exports = { generateHint, uploadResume, generateInterviewQuestions, chat, generateRoadmap, getRoadmap };
+async function getLatestResumeAnalysis(req, res) {
+  const result = await resumeService.getLatestResumeAnalysis(req.user._id);
+
+  res.status(200).json(
+    new ApiResponse(200, result, result ? "Latest analysis retrieved" : "No analysis found"),
+  );
+}
+
+module.exports = { getDailyProblem, refreshDailyProblem, generateHint, uploadResume, generateInterviewQuestions, chat, generateRoadmap, getRoadmap, getLatestResumeAnalysis };
