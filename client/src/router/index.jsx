@@ -15,6 +15,7 @@ const AssistantPage = lazy(() => import("../pages/AssistantPage"));
 const ResumeAnalyzerPage = lazy(() => import("../pages/ResumeAnalyzerPage"));
 const RoadmapPage = lazy(() => import("../pages/RoadmapPage"));
 const AnalyticsPage = lazy(() => import("../pages/AnalyticsPage"));
+const MockInterviewPage = lazy(() => import("../pages/MockInterviewPage"));
 
 function SuspenseWrapper({ children }) {
   return (
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
       { path: "/resume", element: <SuspenseWrapper><ResumeAnalyzerPage /></SuspenseWrapper> },
       { path: "/roadmap", element: <SuspenseWrapper><RoadmapPage /></SuspenseWrapper> },
       { path: "/analytics", element: <SuspenseWrapper><AnalyticsPage /></SuspenseWrapper> },
+      { path: "/mock-interview", element: <SuspenseWrapper><MockInterviewPage /></SuspenseWrapper> },
     ],
   },
 ]);

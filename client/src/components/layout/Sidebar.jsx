@@ -7,6 +7,7 @@ const links = [
   { to: '/assistant', label: 'Assistant', icon: '🤖' },
   { to: '/resume', label: 'Resume', icon: '📄' },
   { to: '/roadmap', label: 'Roadmap', icon: '🗺️' },
+  { to: '/mock-interview', label: 'Mock Interview', icon: '🎙️' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
 ];
 
