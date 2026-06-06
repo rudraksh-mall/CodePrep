@@ -75,9 +75,21 @@ export default function ProblemDetailPage() {
     if (noteData) setNotes(noteData.content || '');
   }, [noteData]);
 
+  useEffect(() => {
+    setNotes('');
+    setSaveStatus('idle');
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  }, [problemId]);
+
   const saveMutation = useMutation({
     mutationFn: () => noteApi.upsertNote(problemId, notes),
-    onSuccess: () => setSaveStatus('saved'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['note', problemId] });
+      setSaveStatus('saved');
+    },
     onError: () => setSaveStatus('error'),
   });
 

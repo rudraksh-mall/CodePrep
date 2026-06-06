@@ -58,4 +58,37 @@ async function getAssistantResponse({ message, chatHistory }) {
   return response;
 }
 
-module.exports = { getAssistantResponse };
+async function streamAssistantResponse({ message, chatHistory }) {
+  const embeddings = getEmbeddings();
+  const llm = getLLM();
+
+  const vectorStore = new Chroma(embeddings, {
+    collectionName: COLLECTION_NAME,
+  });
+
+  const retriever = vectorStore.asRetriever(5);
+
+  const formattedHistory = (chatHistory || [])
+    .filter((m) => m.role && m.content)
+    .map((m) => {
+      if (m.role === "assistant") return new AIMessage(m.content);
+      return new HumanMessage(m.content);
+    });
+
+  const prompt = ChatPromptTemplate.fromMessages([
+    ["system", systemPrompt],
+    ["placeholder", "{chatHistory}"],
+    ["human", "{question}"],
+  ]);
+
+  const chain = RunnablePassthrough.assign({
+    context: (input) => retriever.pipe(formatDocs).invoke(input.question),
+  }).pipe(prompt).pipe(llm).pipe(new StringOutputParser());
+
+  return chain.stream({
+    question: message,
+    chatHistory: formattedHistory,
+  });
+}
+
+module.exports = { getAssistantResponse, streamAssistantResponse };

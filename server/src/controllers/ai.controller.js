@@ -32,7 +32,7 @@ async function uploadResume(req, res) {
   });
 
   res.status(200).json(
-    new ApiResponse(200, { resumeId: resume._id, extractedData }, "Resume analyzed"),
+    new ApiResponse(200, { resumeId: resume._id, fileName: resume.fileName, extractedData }, "Resume analyzed"),
   );
 }
 
@@ -69,12 +69,37 @@ async function generateInterviewQuestions(req, res) {
 async function chat(req, res) {
   const { message, chatHistory } = req.body;
 
-  const response = await assistantService.getAssistantResponse({
-    message,
-    chatHistory: chatHistory || [],
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  let isClientConnected = true;
+  req.on("close", () => {
+    isClientConnected = false;
   });
 
-  res.status(200).json(new ApiResponse(200, { response }, "Response generated"));
+  try {
+    const stream = await assistantService.streamAssistantResponse({
+      message,
+      chatHistory: chatHistory || [],
+    });
+
+    for await (const chunk of stream) {
+      if (!isClientConnected) break;
+      res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
+    }
+
+    if (isClientConnected) {
+      res.write("data: [DONE]\n\n");
+    }
+  } catch (err) {
+    if (isClientConnected) {
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+    }
+  } finally {
+    res.end();
+  }
 }
 
 async function generateRoadmap(req, res) {
@@ -97,4 +122,12 @@ async function getRoadmap(req, res) {
   res.status(200).json(new ApiResponse(200, roadmap || null, roadmap ? "Roadmap retrieved" : "No roadmap found"));
 }
 
-module.exports = { generateHint, uploadResume, generateInterviewQuestions, chat, generateRoadmap, getRoadmap };
+async function getLatestResumeAnalysis(req, res) {
+  const result = await resumeService.getLatestResumeAnalysis(req.user._id);
+
+  res.status(200).json(
+    new ApiResponse(200, result, result ? "Latest analysis retrieved" : "No analysis found"),
+  );
+}
+
+module.exports = { generateHint, uploadResume, generateInterviewQuestions, chat, generateRoadmap, getRoadmap, getLatestResumeAnalysis };

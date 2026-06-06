@@ -69,6 +69,8 @@ const roadmapSchema = z.object({
 router.post("/roadmap", validate(roadmapSchema), aiController.generateRoadmap);
 router.get("/roadmap", aiController.getRoadmap);
 
+router.get("/resume/latest", aiController.getLatestResumeAnalysis);
+
 router.post("/resume/upload", (req, res, next) => {
   uploadPDF(req, res, (err) => {
     if (err) {

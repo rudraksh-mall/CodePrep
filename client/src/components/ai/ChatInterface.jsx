@@ -30,6 +30,9 @@ export default function ChatInterface() {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
+  const lastMessage = messages[messages.length - 1];
+  const hasStreamingContent = lastMessage?.role === 'assistant' && lastMessage.content.length > 0;
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
@@ -99,7 +102,7 @@ export default function ChatInterface() {
           <ChatMessage key={i} message={msg} />
         ))}
 
-        {isLoading && <TypingIndicator />}
+        {isLoading && !hasStreamingContent && <TypingIndicator />}
 
         <div ref={bottomRef} />
       </div>
