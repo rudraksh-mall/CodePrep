@@ -9,6 +9,7 @@ import { PageLoader } from '../components/ui/Loader';
 import StreakCard from '../components/progress/StreakCard';
 import TopicProgressBar from '../components/progress/TopicProgressBar';
 import HeatmapCalendar from '../components/progress/HeatmapCalendar';
+import PlatformConnector from '../components/ai/PlatformConnector';
 import { useSummary, useByTopic, useByDifficulty, useOverTime } from '../hooks/useAnalytics';
 
 function loadCompletedWeeks(roadmapId, weeks) {
@@ -607,6 +608,8 @@ export default function DashboardPage() {
           </div>
         )}
       </Card>
+
+      <PlatformConnector />
     </div>
   );
 }

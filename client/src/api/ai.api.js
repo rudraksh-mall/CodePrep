@@ -78,3 +78,5 @@ export async function generateQuestions(resumeId, { targetRole, questionCount })
   });
   return res.data.data;
 }
+
+

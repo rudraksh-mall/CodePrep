@@ -1,7 +1,8 @@
 const Progress = require("../models/Progress");
+const LearningEvent = require("../models/LearningEvent");
 const User = require("../models/User");
 
-async function upsertProgress({ userId, problemId, status, timeSpentMinutes }) {
+async function upsertProgress({ userId, problemId, status, timeSpentMinutes, hintsUsed, attempts }) {
   const updateData = {
     status,
     timeSpentMinutes,
@@ -20,6 +21,23 @@ async function upsertProgress({ userId, problemId, status, timeSpentMinutes }) {
       new: true,
     }
   );
+
+  try {
+    const Problem = require("../models/Problem");
+    const problem = await Problem.findById(problemId).select("topics pattern").lean();
+    await LearningEvent.create({
+      userId,
+      problemId,
+      topic: problem?.topics?.[0],
+      pattern: problem?.pattern,
+      status,
+      hintsUsed: hintsUsed || 0,
+      attempts: attempts || 1,
+      timeSpentMinutes: timeSpentMinutes || 0,
+    });
+  } catch {
+    // non-blocking; learning event is auxiliary
+  }
 
   if (status === "solved") {
     await updateStreak(userId);

@@ -16,7 +16,6 @@ const ResumeAnalyzerPage = lazy(() => import("../pages/ResumeAnalyzerPage"));
 const RoadmapPage = lazy(() => import("../pages/RoadmapPage"));
 const AnalyticsPage = lazy(() => import("../pages/AnalyticsPage"));
 const MockInterviewPage = lazy(() => import("../pages/MockInterviewPage"));
-
 function SuspenseWrapper({ children }) {
   return (
     <ErrorBoundary>

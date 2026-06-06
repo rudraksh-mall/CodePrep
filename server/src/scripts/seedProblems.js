@@ -1300,12 +1300,17 @@ async function seedProblems() {
     const deleteResult = await Problem.deleteMany({});
     console.log(`Cleared ${deleteResult.deletedCount} existing problems`);
 
-    // Add default user ID and slug to each problem
-    const problemsWithUser = problems.map((problem) => ({
-      ...problem,
-      slug: slugify(problem.title, { lower: true, strict: true, trim: true }),
-      createdBy: DUMMY_USER_ID,
-    }));
+    // Add default user ID, slug, and source URL to each problem
+    const problemsWithUser = problems.map((problem) => {
+      const slug = slugify(problem.title, { lower: true, strict: true, trim: true });
+      return {
+        ...problem,
+        slug,
+        sourceUrl: `https://leetcode.com/problems/${slug}/`,
+        sourceLabel: "LeetCode",
+        createdBy: DUMMY_USER_ID,
+      };
+    });
 
     // Insert all problems
     const result = await Problem.insertMany(problemsWithUser);

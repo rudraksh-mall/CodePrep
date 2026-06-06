@@ -49,3 +49,8 @@ export async function getTopicMastery() {
   const res = await api.get('/analytics/topic-mastery');
   return res.data.data;
 }
+
+export async function getWeakTopics() {
+  const res = await api.get('/analytics/weak-topics');
+  return res.data.data;
+}

@@ -421,6 +421,27 @@ async function getTopicMastery(userId) {
     .sort((a, b) => b.mastery - a.mastery);
 }
 
+async function getWeakTopics(userId) {
+  const topicData = await getByTopic(userId);
+
+  const weak = topicData
+    .filter((t) => t.solved + t.attempted > 0)
+    .map((t) => {
+      const attempted = t.solved + t.attempted;
+      const weaknessPct = Math.round((1 - t.solved / attempted) * 100);
+      return {
+        topic: t.topic,
+        solved: t.solved,
+        attempted,
+        total: t.total,
+        weaknessPct,
+      };
+    })
+    .sort((a, b) => b.weaknessPct - a.weaknessPct);
+
+  return weak;
+}
+
 module.exports = {
   getSummary,
   getByTopic,
@@ -432,4 +453,5 @@ module.exports = {
   getTimeInvestment,
   getReadinessBreakdown,
   getTopicMastery,
+  getWeakTopics,
 };

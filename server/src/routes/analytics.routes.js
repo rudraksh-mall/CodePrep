@@ -16,5 +16,6 @@ router.get("/topic-growth", analyticsController.getTopicGrowth);
 router.get("/time-investment", analyticsController.getTimeInvestment);
 router.get("/readiness-breakdown", analyticsController.getReadinessBreakdown);
 router.get("/topic-mastery", analyticsController.getTopicMastery);
+router.get("/weak-topics", analyticsController.getWeakTopics);
 
 module.exports = router;

@@ -80,3 +80,11 @@ export function useTopicMastery() {
     staleTime: 300000,
   });
 }
+
+export function useWeakTopics() {
+  return useQuery({
+    queryKey: ['analytics', 'weak-topics'],
+    queryFn: analyticsApi.getWeakTopics,
+    staleTime: 300000,
+  });
+}

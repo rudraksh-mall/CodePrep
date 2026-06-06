@@ -56,6 +56,12 @@ const problemSchema = new mongoose.Schema(
         ref: "Solution",
       },
     ],
+    sourceUrl: {
+      type: String,
+    },
+    sourceLabel: {
+      type: String,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
