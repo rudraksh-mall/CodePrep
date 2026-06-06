@@ -81,4 +81,36 @@ export async function generateQuestions(resumeId, { targetRole, questionCount })
   return res.data.data;
 }
 
+export async function uploadMockResume(file, onProgress) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await api.post('/interview/mock-resume/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress(progressEvent) {
+      if (onProgress && progressEvent.total) {
+        const pct = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+        onProgress(pct);
+      }
+    },
+  });
+
+  return res.data.data;
+}
+
+export async function getLatestMockResume() {
+  const res = await api.get('/interview/mock-resume/latest');
+  return res.data.data;
+}
+
+export async function getInterviewHistory() {
+  const res = await api.get('/interview/history');
+  return res.data.data;
+}
+
+export async function getInterviewSession(sessionId) {
+  const res = await api.get(`/interview/session/${sessionId}`);
+  return res.data.data;
+}
+
 

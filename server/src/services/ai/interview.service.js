@@ -2,9 +2,10 @@ const { ChatPromptTemplate } = require("@langchain/core/prompts");
 const { JsonOutputParser } = require("@langchain/core/output_parsers");
 const { getLLM } = require("./embeddings.service");
 const InterviewSession = require("../../models/InterviewSession");
-const Resume = require("../../models/Resume");
+const MockInterviewResume = require("../../models/MockInterviewResume");
+const { analyzeResume } = require("./resume.service");
 
-const QUESTION_COUNT_MAP = { 5: 2, 10: 4, 20: 6 };
+const QUESTION_COUNT_MAP = { 15: 3, 30: 5, 45: 7 };
 
 const conversationSystemTemplate = `You are CodePrep AI, a senior technical interviewer conducting a live voice interview. You are speaking directly to the candidate. Your tone is professional, engaging, and natural — like a real interviewer at a top tech company.
 
@@ -76,7 +77,7 @@ async function getResumeContext(userId, interviewType) {
   if (interviewType !== "Resume-Based" && interviewType !== "Mixed") return "";
 
   try {
-    const resume = await Resume.findOne({ userId }).sort({ createdAt: -1 }).lean();
+    const resume = await MockInterviewResume.findOne({ userId }).sort({ createdAt: -1 }).lean();
     if (resume?.extractedData) {
       const skills = resume.extractedData.extractedSkills || [];
       const roles = (resume.extractedData.experience || []).map((e) => `- ${e.title} at ${e.company}`).join("\n");
@@ -86,6 +87,23 @@ async function getResumeContext(userId, interviewType) {
     // resume unavailable
   }
   return "";
+}
+
+async function uploadMockResume({ userId, buffer, fileName }) {
+  const { extractedData, rawText } = await analyzeResume(buffer);
+  const resume = await MockInterviewResume.create({ userId, fileName, rawText, extractedData });
+  return { resumeId: resume._id, fileName: resume.fileName, extractedData };
+}
+
+async function getLatestMockResume(userId) {
+  const resume = await MockInterviewResume.findOne({ userId }).sort({ createdAt: -1 }).lean();
+  if (!resume) return null;
+  return {
+    resumeId: resume._id,
+    fileName: resume.fileName,
+    extractedSkills: resume.extractedData?.extractedSkills || [],
+    createdAt: resume.createdAt,
+  };
 }
 
 function formatConversationHistory(conversation) {
@@ -377,11 +395,54 @@ async function endSession({ sessionId, userId }) {
   session.status = "completed";
   await session.save();
 
-  return { sessionId: session._id, finalReport: report };
+  return {
+    sessionId: session._id,
+    finalReport: report,
+    questions: session.questions,
+    conversation: session.conversation,
+  };
+}
+
+async function getSession({ sessionId, userId }) {
+  const session = await InterviewSession.findOne({ _id: sessionId, userId }).lean();
+  if (!session) {
+    const err = new Error("Interview session not found");
+    err.statusCode = 404;
+    throw err;
+  }
+  return {
+    sessionId: session._id,
+    interviewType: session.interviewType,
+    duration: session.duration,
+    status: session.status,
+    questions: session.questions,
+    conversation: session.conversation,
+    finalReport: session.finalReport,
+    createdAt: session.createdAt,
+  };
+}
+
+async function getHistory(userId) {
+  const sessions = await InterviewSession.find({ userId })
+    .sort({ createdAt: -1 })
+    .select("interviewType duration status finalReport.overallScore createdAt")
+    .lean();
+  return sessions.map((s) => ({
+    sessionId: s._id,
+    interviewType: s.interviewType,
+    duration: s.duration,
+    status: s.status,
+    overallScore: s.finalReport?.overallScore ?? null,
+    createdAt: s.createdAt,
+  }));
 }
 
 module.exports = {
   startSession,
   answerQuestion,
   endSession,
+  uploadMockResume,
+  getLatestMockResume,
+  getSession,
+  getHistory,
 };
