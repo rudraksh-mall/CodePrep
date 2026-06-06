@@ -1,10 +1,9 @@
-const { Chroma } = require("@langchain/community/vectorstores/chroma");
+const { PineconeStore } = require("@langchain/pinecone");
 const { ChatPromptTemplate } = require("@langchain/core/prompts");
 const { JsonOutputParser } = require("@langchain/core/output_parsers");
 const { getEmbeddings, getLLM } = require("./embeddings.service");
+const { getPineconeIndex } = require("../../config/pinecone");
 const Roadmap = require("../../models/Roadmap");
-
-const COLLECTION_NAME = "dsa_knowledge_base";
 
 const weekCountMap = { 30: 4, 60: 8, 90: 12 };
 
@@ -25,15 +24,13 @@ Rules:
 - Each week must have a clear theme, specific topics, concrete goals, and measurable checkpoints.
 - Progress from fundamentals to advanced topics over the weeks.
 - Focus on the user's weak topics while building toward interview readiness for the target role.
-- Base the roadmap on the retrieved DSA context when applicable.
-- If a weak topic is not covered by the context, use your general DSA knowledge to fill gaps.
 
 Return a JSON object with a single key "weeks" containing an array of objects. Each object must have:
 - weekNumber: number (1-based)
-- theme: string — the overarching theme for the week
-- topics: array of strings — specific topics and algorithms to study
-- goals: array of strings — 2-3 learning goals for the week
-- checkpoints: array of strings — 2-3 ways to verify progress (e.g., "Solve 3 problems on LeetCode")
+- theme: string
+- topics: array of strings
+- goals: array of strings
+- checkpoints: array of strings
 
 Return ONLY valid JSON. No markdown, no explanation.`;
 
@@ -52,23 +49,24 @@ async function generateRoadmap({ weakTopics, targetRole, duration, currentLevel,
 
   let context = "";
   try {
-    const vectorStore = new Chroma(embeddings, {
-      collectionName: COLLECTION_NAME,
-    });
-
-    const retriever = vectorStore.asRetriever(10);
-    const docs = await retriever.invoke(weakTopicsStr);
-    context = formatDocs(docs);
+    const pineconeIndex = await getPineconeIndex();
+    if (pineconeIndex) {
+      const vectorStore = new PineconeStore(embeddings, { pineconeIndex });
+      const retriever = vectorStore.asRetriever(10);
+      const docs = await retriever.invoke(weakTopicsStr);
+      context = formatDocs(docs);
+    }
   } catch {
     context = "No additional context available.";
   }
 
+  const userContext = context
+    ? `Retrieved DSA context:\n${context}`
+    : "No additional context available.";
+
   const prompt = ChatPromptTemplate.fromMessages([
     ["system", systemTemplate],
-    [
-      "human",
-      "Generate a {weekCount}-week DSA study roadmap for a {currentLevel} learner targeting {targetRole}. Weak areas: {weakTopics}.",
-    ],
+    ["human", "Generate a {weekCount}-week DSA study roadmap for a {currentLevel} learner targeting {targetRole}. Weak areas: {weakTopics}.\n\n{userContext}"],
   ]);
 
   const chain = prompt.pipe(llm).pipe(new JsonOutputParser());
@@ -79,6 +77,7 @@ async function generateRoadmap({ weakTopics, targetRole, duration, currentLevel,
     targetRole,
     duration,
     weekCount,
+    userContext,
   });
 
   const roadmap = await Roadmap.create({

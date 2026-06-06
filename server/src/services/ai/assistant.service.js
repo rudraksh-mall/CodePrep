@@ -1,19 +1,15 @@
-const { Chroma } = require("@langchain/community/vectorstores/chroma");
+const { PineconeStore } = require("@langchain/pinecone");
 const { ChatPromptTemplate } = require("@langchain/core/prompts");
 const { StringOutputParser } = require("@langchain/core/output_parsers");
-const { RunnablePassthrough } = require("@langchain/core/runnables");
 const { HumanMessage, AIMessage } = require("@langchain/core/messages");
 const { getEmbeddings, getLLM } = require("./embeddings.service");
+const { getPineconeIndex } = require("../../config/pinecone");
 
-const COLLECTION_NAME = "dsa_knowledge_base";
-
-const systemPrompt = `You are CodePrep AI, a senior DSA mentor. Answer the user's question using ONLY the context provided below.
+const systemPrompt = `You are CodePrep AI, a senior DSA mentor. Answer the user's question using ONLY the context provided below if available. If no context is available, answer based on your general DSA knowledge. Be concise, clear, and educational.
 
 Rules:
-- If the context does not contain enough information to answer, admit that you don't know.
+- If you are unsure, admit that you don't know.
 - Never hallucinate algorithms, time complexities, data structures, or problem solutions.
-- Base your answer strictly on the retrieved DSA knowledge.
-- Be concise, clear, and educational.
 - Use code examples only when they appear in the retrieved context.
 
 Retrieved context:
@@ -27,11 +23,18 @@ async function getAssistantResponse({ message, chatHistory }) {
   const embeddings = getEmbeddings();
   const llm = getLLM();
 
-  const vectorStore = new Chroma(embeddings, {
-    collectionName: COLLECTION_NAME,
-  });
-
-  const retriever = vectorStore.asRetriever(5);
+  let context = "No additional context available.";
+  try {
+    const pineconeIndex = await getPineconeIndex();
+    if (pineconeIndex) {
+      const vectorStore = new PineconeStore(embeddings, { pineconeIndex });
+      const retriever = vectorStore.asRetriever(5);
+      const docs = await retriever.invoke(message);
+      context = formatDocs(docs);
+    }
+  } catch {
+    context = "No additional context available.";
+  }
 
   const formattedHistory = (chatHistory || [])
     .filter((m) => m.role && m.content)
@@ -41,14 +44,12 @@ async function getAssistantResponse({ message, chatHistory }) {
     });
 
   const prompt = ChatPromptTemplate.fromMessages([
-    ["system", systemPrompt],
+    ["system", systemPrompt.replace("{context}", context)],
     ["placeholder", "{chatHistory}"],
     ["human", "{question}"],
   ]);
 
-  const chain = RunnablePassthrough.assign({
-    context: (input) => retriever.pipe(formatDocs).invoke(input.question),
-  }).pipe(prompt).pipe(llm).pipe(new StringOutputParser());
+  const chain = prompt.pipe(llm).pipe(new StringOutputParser());
 
   const response = await chain.invoke({
     question: message,

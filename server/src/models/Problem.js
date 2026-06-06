@@ -83,20 +83,16 @@ const problemSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// Pre-save hook to auto-generate slug from title
 problemSchema.pre("save", function (next) {
   if (!this.isModified("title")) return next();
-
   this.slug = slugify(this.title, {
     lower: true,
     strict: true,
     trim: true,
   });
-
   next();
 });
 
-// Compound text index for full-text search with weights
 problemSchema.index(
   { title: "text", description: "text" },
   { weights: { title: 3, description: 1 } },
