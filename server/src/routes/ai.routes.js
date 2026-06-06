@@ -59,6 +59,8 @@ router.post("/chat", validate(chatSchema), aiController.chat);
 
 const roadmapSchema = z.object({
   weakTopics: z.array(z.string()).optional(),
+  strongTopics: z.array(z.string()).optional(),
+  mode: z.enum(["manual", "analytics", "hybrid"]).optional(),
   targetRole: z.string().min(1, "targetRole is required"),
   duration: z.number().int().refine((val) => [30, 60, 90].includes(val), {
     message: "duration must be 30, 60, or 90",

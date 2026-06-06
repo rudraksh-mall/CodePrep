@@ -19,6 +19,12 @@ const roadmapSchema = new mongoose.Schema(
       required: true,
     },
     weakTopics: [String],
+    strongTopics: [String],
+    mode: {
+      type: String,
+      enum: ["manual", "analytics", "hybrid"],
+      default: "manual",
+    },
     targetRole: { type: String, required: true },
     duration: {
       type: Number,

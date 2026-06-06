@@ -1,5 +1,25 @@
-import { useReducer, useCallback } from 'react';
+import { useReducer, useCallback, useEffect } from 'react';
 import * as aiApi from '../api/ai.api';
+
+const STORAGE_KEY = 'chat_messages';
+
+function loadMessages() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const messages = raw ? JSON.parse(raw) : [];
+    return messages.filter((m) => !(m.role === 'assistant' && !m.content));
+  } catch {
+    return [];
+  }
+}
+
+function saveMessages(messages) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  } catch {
+    /* storage full or unavailable */
+  }
+}
 
 const initialState = {
   messages: [],
@@ -29,7 +49,14 @@ function reducer(state, action) {
 }
 
 export default function useChat() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState, () => ({
+    messages: loadMessages(),
+    isLoading: false,
+  }));
+
+  useEffect(() => {
+    saveMessages(state.messages);
+  }, [state.messages]);
 
   const sendMessage = useCallback(async (text) => {
     const userMsg = { role: 'user', content: text, timestamp: new Date() };
@@ -89,6 +116,12 @@ export default function useChat() {
   const clearChat = useCallback(() => {
     dispatch({ type: 'CLEAR' });
   }, []);
+
+  useEffect(() => {
+    if (state.messages.length === 0) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [state.messages]);
 
   return { ...state, sendMessage, clearChat };
 }

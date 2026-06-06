@@ -33,8 +33,15 @@ async function getProgressForProblem(req, res) {
   res.status(200).json(new ApiResponse(200, result));
 }
 
+async function getAnalyticsSummary(req, res) {
+  const result = await progressService.getAnalyticsSummary(req.user._id);
+
+  res.status(200).json(new ApiResponse(200, result));
+}
+
 module.exports = {
   upsertProgress,
   getUserProgress,
   getProgressForProblem,
+  getAnalyticsSummary,
 };

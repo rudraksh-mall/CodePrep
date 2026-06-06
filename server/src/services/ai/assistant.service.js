@@ -63,11 +63,18 @@ async function streamAssistantResponse({ message, chatHistory }) {
   const embeddings = getEmbeddings();
   const llm = getLLM();
 
-  const vectorStore = new Chroma(embeddings, {
-    collectionName: COLLECTION_NAME,
-  });
-
-  const retriever = vectorStore.asRetriever(5);
+  let context = "No additional context available.";
+  try {
+    const pineconeIndex = await getPineconeIndex();
+    if (pineconeIndex) {
+      const vectorStore = new PineconeStore(embeddings, { pineconeIndex });
+      const retriever = vectorStore.asRetriever(5);
+      const docs = await retriever.invoke(message);
+      context = formatDocs(docs);
+    }
+  } catch {
+    context = "No additional context available.";
+  }
 
   const formattedHistory = (chatHistory || [])
     .filter((m) => m.role && m.content)
@@ -77,14 +84,12 @@ async function streamAssistantResponse({ message, chatHistory }) {
     });
 
   const prompt = ChatPromptTemplate.fromMessages([
-    ["system", systemPrompt],
+    ["system", systemPrompt.replace("{context}", context)],
     ["placeholder", "{chatHistory}"],
     ["human", "{question}"],
   ]);
 
-  const chain = RunnablePassthrough.assign({
-    context: (input) => retriever.pipe(formatDocs).invoke(input.question),
-  }).pipe(prompt).pipe(llm).pipe(new StringOutputParser());
+  const chain = prompt.pipe(llm).pipe(new StringOutputParser());
 
   return chain.stream({
     question: message,

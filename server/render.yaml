@@ -16,5 +16,7 @@ services:
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
+      - key: PINECONE_API_KEY
+        sync: false
       - key: FRONTEND_URL
         sync: false

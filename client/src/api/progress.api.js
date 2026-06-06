@@ -14,3 +14,8 @@ export async function getUserProgress() {
   const res = await api.get('/progress');
   return res.data.data;
 }
+
+export async function getAnalyticsSummary() {
+  const res = await api.get('/progress/analytics-summary');
+  return res.data.data;
+}

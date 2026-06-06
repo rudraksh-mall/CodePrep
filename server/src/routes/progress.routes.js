@@ -16,6 +16,7 @@ const upsertSchema = z.object({
 
 router.put("/", validate(upsertSchema), progressController.upsertProgress);
 router.get("/", progressController.getUserProgress);
+router.get("/analytics-summary", progressController.getAnalyticsSummary);
 router.get("/:problemId", progressController.getProgressForProblem);
 
 module.exports = router;

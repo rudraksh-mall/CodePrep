@@ -103,10 +103,12 @@ async function chat(req, res) {
 }
 
 async function generateRoadmap(req, res) {
-  const { weakTopics, targetRole, duration, currentLevel } = req.body;
+  const { weakTopics, strongTopics, mode, targetRole, duration, currentLevel } = req.body;
 
   const roadmap = await roadmapService.generateRoadmap({
     weakTopics: weakTopics || [],
+    strongTopics: strongTopics || [],
+    mode: mode || "manual",
     targetRole,
     duration,
     currentLevel,

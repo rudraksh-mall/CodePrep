@@ -76,9 +76,29 @@ async function getProgressForProblem(userId, problemId) {
   );
 }
 
+async function getAnalyticsSummary(userId) {
+  const solvedProgress = await Progress.find({ userId, status: "solved" })
+    .populate("problemId", "topics")
+    .lean();
+
+  const solvedPerTopic = {};
+  let totalSolved = 0;
+
+  for (const p of solvedProgress) {
+    if (!p.problemId || !p.problemId.topics) continue;
+    totalSolved++;
+    for (const topic of p.problemId.topics) {
+      solvedPerTopic[topic] = (solvedPerTopic[topic] || 0) + 1;
+    }
+  }
+
+  return { solvedPerTopic, totalSolved };
+}
+
 module.exports = {
   upsertProgress,
   updateStreak,
   getUserProgress,
   getProgressForProblem,
+  getAnalyticsSummary,
 };

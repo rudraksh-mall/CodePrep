@@ -9,13 +9,12 @@ import Spinner from '../components/ui/Spinner';
 const categories = ['all', 'technical', 'behavioral', 'system design'];
 
 export default function ResumeAnalyzerPage() {
-  const [loading, setLoading] = useState(true);
-  const [step, setStep] = useState(1);
+  const [phase, setPhase] = useState('loading');
   const [resumeId, setResumeId] = useState(null);
   const [targetRole, setTargetRole] = useState('');
   const [questions, setQuestions] = useState([]);
   const [extractedSkills, setExtractedSkills] = useState([]);
-  const [resumeInfo, setResumeInfo] = useState(null);
+  const [resumeFileName, setResumeFileName] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -26,67 +25,60 @@ export default function ResumeAnalyzerPage() {
     async function load() {
       try {
         const data = await aiApi.getLatestResumeAnalysis();
+        if (data?.questions?.length > 0) {
+          setResumeId(data.resumeId);
+          setExtractedSkills(data.extractedSkills || []);
+          setTargetRole(data.targetRole || '');
+          setQuestions(data.questions);
+          setResumeFileName(data.fileName);
+          setPhase('previous');
+          return;
+        }
         if (data) {
           setResumeId(data.resumeId);
           setExtractedSkills(data.extractedSkills || []);
-          setResumeInfo({
-            fileName: data.fileName,
-            createdAt: data.createdAt,
-            targetRole: data.targetRole,
-            questionCount: data.questions?.length || 0,
-            skillCount: data.extractedSkills?.length || 0,
-          });
-          if (data.questions?.length > 0) {
-            setQuestions(data.questions);
-            setTargetRole(data.targetRole || '');
-            setStep(2);
-          } else {
-            if (data.targetRole) setTargetRole(data.targetRole);
-          }
+          setTargetRole(data.targetRole || '');
+          setResumeFileName(data.fileName);
         }
       } catch {
         /* no analysis found */
-      } finally {
-        setLoading(false);
       }
+      setPhase('upload');
     }
     load();
   }, []);
 
-  const uploaderInitialResult =
-    resumeId && extractedSkills.length > 0
-      ? { resumeId, extractedData: { extractedSkills } }
-      : null;
-
-  function handleUploadComplete(data) {
-    setResumeId(data.resumeId);
-    setExtractedSkills(data.extractedData?.extractedSkills || []);
-    setQuestions([]);
-    setResumeInfo({
-      fileName: data.fileName || null,
-      createdAt: null,
-      targetRole: null,
-      questionCount: 0,
-      skillCount: data.extractedData?.extractedSkills?.length || 0,
-    });
-  }
-
-  function handleBackToStep1() {
-    setStep(1);
-    setResumeId(null);
-    setQuestions([]);
-    setExtractedSkills([]);
-    setCategoryFilter('all');
-    setResumeInfo(null);
-  }
-
-  function handleStartNew() {
-    setStep(1);
+  function startNewAnalysis() {
+    setPhase('upload');
     setResumeId(null);
     setTargetRole('');
     setQuestions([]);
     setExtractedSkills([]);
-    setResumeInfo(null);
+    setResumeFileName(null);
+    setCategoryFilter('all');
+    setError('');
+    setRoleError('');
+    setResumeKey((k) => k + 1);
+  }
+
+  function continuePreviousAnalysis() {
+    setPhase('workspace');
+  }
+
+  function handleUploadComplete(data) {
+    setResumeId(data.resumeId);
+    setExtractedSkills(data.extractedData?.extractedSkills || []);
+    setResumeFileName(data.fileName || null);
+    setQuestions([]);
+    setPhase('analyze');
+  }
+
+  function handleBackToUpload() {
+    setPhase('upload');
+    setResumeId(null);
+    setQuestions([]);
+    setExtractedSkills([]);
+    setResumeFileName(null);
     setCategoryFilter('all');
     setError('');
     setRoleError('');
@@ -108,11 +100,7 @@ export default function ResumeAnalyzerPage() {
         questionCount: 15,
       });
       setQuestions(data.questions || []);
-      setResumeInfo((prev) =>
-        prev
-          ? { ...prev, targetRole: targetRole.trim(), questionCount: data.questions?.length || 0 }
-          : prev,
-      );
+      setPhase('workspace');
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to generate questions');
     } finally {
@@ -120,12 +108,18 @@ export default function ResumeAnalyzerPage() {
     }
   }
 
+  function handleGenerateNew() {
+    setQuestions([]);
+    setCategoryFilter('all');
+    setPhase('analyze');
+  }
+
   const filtered =
     categoryFilter === 'all'
       ? questions
       : questions.filter((q) => q.category === categoryFilter);
 
-  if (loading) {
+  if (phase === 'loading') {
     return (
       <div className="flex items-center justify-center py-20">
         <Spinner fullPage={false} />
@@ -139,170 +133,184 @@ export default function ResumeAnalyzerPage() {
         Resume Analyzer
       </h1>
 
-      {resumeInfo && (
-        <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-5">
+      {phase === 'previous' && (
+        <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-6">
           <p className="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-3">
-            Last Resume Analysis
+            Resume Analysis Summary
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
             <div>
               <p className="text-xs text-surface-400 dark:text-surface-500">Resume</p>
               <p className="text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
-                {resumeInfo.fileName || 'Uploaded resume'}
+                {resumeFileName || 'Uploaded resume'}
               </p>
             </div>
             <div>
               <p className="text-xs text-surface-400 dark:text-surface-500">Target Role</p>
               <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
-                {resumeInfo.targetRole || 'Not set'}
+                {targetRole || 'Not set'}
               </p>
             </div>
             <div>
               <p className="text-xs text-surface-400 dark:text-surface-500">Questions</p>
               <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
-                {resumeInfo.questionCount}
+                {questions.length}
               </p>
             </div>
             <div>
               <p className="text-xs text-surface-400 dark:text-surface-500">Skills</p>
               <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
-                {resumeInfo.skillCount}
+                {extractedSkills.length}
               </p>
             </div>
           </div>
           <div className="flex gap-3">
-            <Button
-              size="sm"
-              variant="primary"
-              onClick={() => setStep(2)}
-            >
+            <Button size="sm" variant="primary" onClick={continuePreviousAnalysis}>
               Continue Previous Analysis
             </Button>
-            <Button size="sm" variant="secondary" onClick={handleStartNew}>
+            <Button size="sm" variant="secondary" onClick={startNewAnalysis}>
               Start New Analysis
             </Button>
           </div>
         </div>
       )}
 
-      <div className="flex items-center gap-4">
-        <div
-          className={`flex items-center gap-2 text-sm font-medium ${step >= 1 ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400'}`}
-        >
-          <span
-            className={`flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold border-2 ${
-              step >= 1
-                ? 'border-primary-600 dark:border-primary-400 bg-primary-600 dark:bg-primary-400 text-white'
-                : 'border-surface-300 dark:border-surface-600'
-            }`}
-          >
-            1
-          </span>
-          Upload Resume
-        </div>
-        <div className="h-px flex-1 bg-surface-200 dark:bg-surface-700" />
-        <div
-          className={`flex items-center gap-2 text-sm font-medium ${step >= 2 ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400'}`}
-        >
-          <span
-            className={`flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold border-2 ${
-              step >= 2
-                ? 'border-primary-600 dark:border-primary-400 bg-primary-600 dark:bg-primary-400 text-white'
-                : 'border-surface-300 dark:border-surface-600'
-            }`}
-          >
-            2
-          </span>
-          Generate Questions
-        </div>
-      </div>
-
-      {step === 1 && (
+      {phase === 'upload' && (
         <div className="space-y-6">
           <ResumeUploader
             key={resumeKey}
             onUploadComplete={handleUploadComplete}
-            initialResult={uploaderInitialResult}
           />
-          {resumeId && (
-            <div className="flex justify-center">
-              <Button onClick={() => setStep(2)} size="lg">
-                Continue → Generate Interview Questions
-              </Button>
-            </div>
-          )}
         </div>
       )}
 
-      {step === 2 && (
+      {phase === 'analyze' && (
         <div className="space-y-6">
-          <button
-            onClick={handleBackToStep1}
-            className="inline-flex items-center gap-1 text-sm text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Upload Different Resume
-          </button>
+          <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100">
+                Resume Analysis
+              </h3>
+              <button
+                onClick={handleBackToUpload}
+                className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-500"
+              >
+                Upload different resume
+              </button>
+            </div>
 
-          <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-5 space-y-4">
-            <RoleSelect
-              label="Target Role"
-              value={targetRole}
-              onChange={(val) => {
-                setTargetRole(val);
-                setRoleError('');
-              }}
-              error={roleError}
-            />
-            <Button onClick={handleGenerate} loading={generating} disabled={!targetRole.trim()}>
-              Generate Questions
-            </Button>
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {extractedSkills.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-medium text-surface-500 dark:text-surface-400 mb-2 uppercase tracking-wider">
+                  Extracted Skills
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {extractedSkills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="inline-flex items-center rounded-full bg-primary-100 dark:bg-primary-900/40 px-2.5 py-0.5 text-xs font-medium text-primary-700 dark:text-primary-300"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <RoleSelect
+                label="Target Role"
+                value={targetRole}
+                onChange={(val) => {
+                  setTargetRole(val);
+                  setRoleError('');
+                }}
+                error={roleError}
+              />
+              <Button onClick={handleGenerate} loading={generating} disabled={!targetRole.trim()}>
+                Generate Questions
+              </Button>
+              {error && <p className="text-sm text-red-500">{error}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {phase === 'workspace' && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 p-5">
+            <p className="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-3">
+              Resume Analysis Summary
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+              <div>
+                <p className="text-xs text-surface-400 dark:text-surface-500">Resume</p>
+                <p className="text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
+                  {resumeFileName || 'Uploaded resume'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-surface-400 dark:text-surface-500">Target Role</p>
+                <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                  {targetRole}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-surface-400 dark:text-surface-500">Questions</p>
+                <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                  {questions.length}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-surface-400 dark:text-surface-500">Skills</p>
+                <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                  {extractedSkills.length}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button size="sm" variant="secondary" onClick={handleGenerateNew}>
+                Generate New Question Set
+              </Button>
+              <Button size="sm" variant="ghost" onClick={startNewAnalysis}>
+                Upload New Resume
+              </Button>
+            </div>
           </div>
 
-          {questions.length > 0 && (
-            <>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setCategoryFilter(cat)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium border transition ${
-                      categoryFilter === cat
-                        ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-700'
-                        : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-400 border-surface-300 dark:border-surface-600 hover:bg-surface-50 dark:hover:bg-surface-700'
-                    }`}
-                  >
-                    {cat === 'all' ? 'All' : cat}
-                  </button>
-                ))}
-              </div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setCategoryFilter(cat)}
+                className={`rounded-full px-3 py-1 text-xs font-medium border transition ${
+                  categoryFilter === cat
+                    ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 border-primary-300 dark:border-primary-700'
+                    : 'bg-white dark:bg-surface-800 text-surface-600 dark:text-surface-400 border-surface-300 dark:border-surface-600 hover:bg-surface-50 dark:hover:bg-surface-700'
+                }`}
+              >
+                {cat === 'all' ? 'All' : cat}
+              </button>
+            ))}
+          </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {filtered.map((q, i) => (
-                  <QuestionCard
-                    key={i}
-                    question={q.question}
-                    category={q.category}
-                    difficulty={q.difficulty}
-                    skill={q.skill}
-                    guidance={q.guidance}
-                  />
-                ))}
-              </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {filtered.map((q, i) => (
+              <QuestionCard
+                key={i}
+                question={q.question}
+                category={q.category}
+                difficulty={q.difficulty}
+                skill={q.skill}
+                guidance={q.guidance}
+              />
+            ))}
+          </div>
 
-              {filtered.length === 0 && (
-                <p className="text-sm text-surface-500 dark:text-surface-400 text-center py-8">
-                  No questions match the selected category.
-                </p>
-              )}
-            </>
+          {filtered.length === 0 && (
+            <p className="text-sm text-surface-500 dark:text-surface-400 text-center py-8">
+              No questions match the selected category.
+            </p>
           )}
         </div>
       )}

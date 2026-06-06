@@ -1,12 +1,12 @@
 const { Pinecone } = require("@pinecone-database/pinecone");
 const { PineconeStore } = require("@langchain/pinecone");
+const { pineconeApiKey } = require("./env");
 
 const INDEX_NAME = "codeprep";
 
 function getPineconeClient() {
-  const apiKey = process.env.PINECONE_API_KEY;
-  if (!apiKey) return null;
-  return new Pinecone({ apiKey });
+  if (!pineconeApiKey) return null;
+  return new Pinecone({ apiKey: pineconeApiKey });
 }
 
 async function waitForIndex(client) {

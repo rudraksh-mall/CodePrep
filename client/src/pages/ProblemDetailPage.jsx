@@ -72,17 +72,14 @@ export default function ProblemDetailPage() {
   });
 
   useEffect(() => {
-    if (noteData) setNotes(noteData.content || '');
-  }, [noteData]);
-
-  useEffect(() => {
-    setNotes('');
+    if (!problemId) return;
+    setNotes(noteData?.content || '');
     setSaveStatus('idle');
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
-  }, [problemId]);
+  }, [problemId, noteData]);
 
   const saveMutation = useMutation({
     mutationFn: () => noteApi.upsertNote(problemId, notes),
