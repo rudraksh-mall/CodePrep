@@ -50,12 +50,6 @@ const problemSchema = new mongoose.Schema(
     constraints: {
       type: String,
     },
-    testCases: [
-      {
-        input: String,
-        output: String,
-      },
-    ],
     solutions: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -66,18 +60,6 @@ const problemSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    },
-    acceptanceRate: {
-      type: Number,
-      default: 0,
-    },
-    totalSubmissions: {
-      type: Number,
-      default: 0,
-    },
-    acceptedSubmissions: {
-      type: Number,
-      default: 0,
     },
   },
   { timestamps: true },

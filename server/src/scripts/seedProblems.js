@@ -1300,7 +1300,7 @@ async function seedProblems() {
     const deleteResult = await Problem.deleteMany({});
     console.log(`Cleared ${deleteResult.deletedCount} existing problems`);
 
-    // Add default user ID and slug to each problem (insertMany bypasses pre-save hooks)
+    // Add default user ID and slug to each problem
     const problemsWithUser = problems.map((problem) => ({
       ...problem,
       slug: slugify(problem.title, { lower: true, strict: true, trim: true }),

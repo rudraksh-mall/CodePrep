@@ -57,7 +57,7 @@ async function getProblems({
 
     // Fetch problems with sorting
     const problems = await Problem.find(query)
-      .select("-examples -constraints -testCases") // Exclude heavy fields for list view
+      .select("-examples -constraints") // Exclude heavy fields for list view
       .sort({ difficulty: 1, title: 1 })
       .skip(skip)
       .limit(limit)
