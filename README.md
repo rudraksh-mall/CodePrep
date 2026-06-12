@@ -343,6 +343,7 @@ MONGODB_URI=
 JWT_SECRET=
 OPENROUTER_API_KEY=
 ---
+```
 
 # 🔥 Key Engineering Highlights
 
