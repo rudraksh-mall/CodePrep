@@ -5,15 +5,22 @@ const ApiResponse = require("../utils/ApiResponse");
 
 async function linkPlatform(req, res) {
   const { platform, username } = req.body;
-
-  const existing = await UserPlatform.findOne({ userId: req.user._id, platform });
-  if (existing) {
-    existing.username = username;
-    await existing.save();
-  } else {
-    await UserPlatform.create({ userId: req.user._id, platform, username });
-  }
-
+  await UserPlatform.findOneAndUpdate(
+    {
+      userId: req.user._id,
+      platform,
+    },
+    {
+      $set: {
+        username,
+      },
+    },
+    {
+      upsert: true,
+      new: true,
+      runValidators: true,
+    },
+  );
   res.status(200).json(new ApiResponse(200, { platform, username }, "Platform linked"));
 }
 

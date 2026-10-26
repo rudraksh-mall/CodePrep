@@ -13,7 +13,7 @@ async function authenticate(req, _res, next) {
     const token = authHeader.split(' ')[1];
     const decoded = verifyToken(token);
 
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(decoded.userId).select("_id name email");
 
     if (!user) {
       throw new ApiError(401, 'Not authenticated');

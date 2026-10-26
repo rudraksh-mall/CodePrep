@@ -7,7 +7,7 @@ const { analyzeResume } = require("./resume.service");
 
 const QUESTION_COUNT_MAP = { 15: 3, 30: 5, 45: 7 };
 
-const conversationSystemTemplate = `You are CodePrep AI, a senior technical interviewer conducting a live voice interview. You are speaking directly to the candidate. Your tone is professional, engaging, and natural — like a real interviewer at a top tech company.
+const conversationSystemTemplate = `You are CodePrep, a senior technical interviewer conducting a live voice interview. You are speaking directly to the candidate. Your tone is professional, engaging, and natural — like a real interviewer at a top tech company.
 
 INTERVIEW STYLE:
 - Start with an opening question to warm up.
@@ -29,7 +29,7 @@ RULES:
 - Never repeat the same question.
 - If the candidate's answer is weak, ask a more specific follow-up to probe understanding.`;
 
-const evaluationSystemTemplate = `You are CodePrep AI, a senior technical interviewer evaluating a candidate's spoken answer.
+const evaluationSystemTemplate = `You are CodePrep, a senior technical interviewer evaluating a candidate's spoken answer.
 
 Evaluate the candidate's answer based on:
 1. Technical Accuracy — correctness and depth of technical knowledge
@@ -52,7 +52,7 @@ Return a JSON object with:
 
 Return ONLY valid JSON. No markdown, no explanation.`;
 
-const reportSystemTemplate = `You are CodePrep AI, generating a final interview performance report.
+const reportSystemTemplate = `You are CodePrep, generating a final interview performance report.
 
 Analyze all the questions, answers, and scores from this interview session.
 Identify patterns in the candidate's performance.

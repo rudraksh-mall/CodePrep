@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const { z } = require('zod');
-const validate = require('../middleware/validate.middleware');
+const validate = require('../middleware/validate.middleware'); // Schema validation
 const authenticate = require('../middleware/auth.middleware');
 const authController = require('../controllers/auth.controller');
 

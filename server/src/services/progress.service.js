@@ -146,16 +146,16 @@ async function getAnalyticsSummary(userId) {
     .populate("problemId", "topics")
     .lean();
 
-  const solvedPerTopic = {};
-  let totalSolved = 0;
+    const solvedPerTopic = {};
+    let totalSolved = 0;
 
-  for (const p of solvedProgress) {
-    if (!p.problemId || !p.problemId.topics) continue;
-    totalSolved++;
-    for (const topic of p.problemId.topics) {
-      solvedPerTopic[topic] = (solvedPerTopic[topic] || 0) + 1;
+    for (const p of solvedProgress) {
+      if (!p.problemId || !p.problemId.topics) continue;
+      totalSolved++;
+      for (const topic of p.problemId.topics) {
+        solvedPerTopic[topic] = (solvedPerTopic[topic] || 0) + 1;
+      }
     }
-  }
 
   return { solvedPerTopic, totalSolved };
 }

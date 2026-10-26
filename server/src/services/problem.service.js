@@ -53,7 +53,7 @@ async function getProblems({
 
     // Validate page number
     const pageNum = Math.max(1, Math.min(page, pages || 1));
-    const skip = (pageNum - 1) * limit;
+    const skip = (pageNum - 1) * limit; 
 
     // Fetch problems with sorting
     const problems = await Problem.find(query)
